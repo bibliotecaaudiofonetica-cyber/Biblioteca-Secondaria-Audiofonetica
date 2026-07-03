@@ -189,6 +189,7 @@ class Student(Base):
     id         = Column(String, primary_key=True, default=new_id)
     full_name  = Column(String, nullable=False, unique=True, index=True)
     pin        = Column(String, nullable=False, default=generate_pin)
+    email      = Column(String, nullable=True)   # impostata dallo studente al primo accesso (facoltativa)
     active     = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime(timezone=True), default=now_utc)
     notes      = Column(String, default="")
@@ -215,6 +216,7 @@ class Student(Base):
             "id":        self.id,
             "fullName":  self.full_name,
             "pin":       self.pin,
+            "email":     self.email,
             "active":    self.active,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "notes":     self.notes,
