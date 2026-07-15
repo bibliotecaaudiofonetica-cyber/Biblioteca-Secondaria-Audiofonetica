@@ -94,7 +94,6 @@ def _run_migrations():
 
     # Backfill: i professori creati con una versione precedente del sistema
     # (basata su email) potrebbero non avere ancora full_name popolato.
-    # Lo deriviamo da first_name + last_name, una volta sola.
     try:
         with engine.connect() as conn:
             conn.execute(text(
@@ -103,10 +102,10 @@ def _run_migrations():
             ))
             conn.commit()
     except Exception:
-        pass  # tabella vuota o altra incompatibilità minore, non bloccante
+        pass
 
-    # Backfill: teacher_alert_stage può essere NULL sui prestiti vecchi —
-    # causa bug nella logica degli alert ai professori.
+    # Backfill: teacher_alert_stage può essere NULL sui prestiti vecchi
+    # (prima che la colonna esistesse), il che causa bugs nella logica degli alert.
     try:
         with engine.connect() as conn:
             conn.execute(text(
@@ -2310,9 +2309,14 @@ def check_overdue_loans():
             if student.class_id:
                 stage = loan.teacher_alert_stage or 0
                 new_stage = None
+                # Determina quale stage mandare: se siamo già a 5+ giorni
+                # e non è mai stato mandato nulla (stage=0), manda subito
+                # il primo alert (stage 1). Al prossimo giro scheduler,
+                # siccome stage sarà 1 e days_late >= 5, salirà a 2.
+                # Questo evita di saltare il primo alert.
                 if stage < 1 and days_late >= TEACHER_FIRST_ALERT_DAYS:
                     new_stage = 1
-                elif stage < 2 and days_late >= TEACHER_SECOND_ALERT_DAYS:
+                if stage < 2 and days_late >= TEACHER_SECOND_ALERT_DAYS and stage >= 1:
                     new_stage = 2
 
                 if new_stage is not None:

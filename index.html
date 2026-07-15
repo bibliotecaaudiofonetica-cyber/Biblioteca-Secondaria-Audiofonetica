@@ -15,7 +15,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -458,18 +457,7 @@
     .modal-edit-grid{grid-template-columns:1fr}
     .admin-form{grid-template-columns:1fr}
   }
-  /* ── Banner libro disponibile ── */
-  #waitlist-banner{display:none;width:100%;max-width:480px;background:linear-gradient(135deg,#EAF5EE,#D4EDDA);border:2px solid var(--green);border-radius:14px;padding:14px 18px;margin-bottom:1rem;animation:bannerSlideIn .4s ease}
-  #waitlist-banner.show{display:flex;gap:12px;align-items:flex-start}
-  @keyframes bannerSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-  .wb-icon{font-size:1.8rem;flex-shrink:0}
-  .wb-body{flex:1}
-  .wb-title{font-weight:700;color:var(--green);font-size:.95rem;margin-bottom:3px}
-  .wb-books{font-size:.82rem;color:#1a5c30;line-height:1.6}
-  .wb-actions{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap}
-  .wb-btn{background:var(--green);color:white;border:none;border-radius:8px;padding:6px 14px;font-family:'Poppins',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer}
-  .wb-btn-dismiss{background:none;border:1px solid var(--green);color:var(--green);border-radius:8px;padding:6px 12px;font-family:'Poppins',sans-serif;font-size:.8rem;cursor:pointer}
-</style>
+  /* ── Chatbot ── */
   #chat-bubble{position:fixed;bottom:1.8rem;right:1.8rem;z-index:300;display:none;flex-direction:column;align-items:flex-end;gap:.7rem}
   #chat-bubble.visible{display:flex}
   #chat-toggle{width:52px;height:52px;border-radius:50%;background:var(--brown);color:var(--gold-light);border:none;font-size:1.5rem;cursor:pointer;box-shadow:var(--shadow-lg);transition:transform .2s}
@@ -544,19 +532,6 @@
 <!-- ACTIONS -->
 <section class="screen" id="screen-actions">
   <h2 id="actions-greeting">Cosa vuoi fare?</h2>
-
-  <!-- Banner libro disponibile in lista d'attesa -->
-  <div id="waitlist-banner">
-    <div class="wb-icon">📗</div>
-    <div class="wb-body">
-      <div class="wb-title">📗 Un libro che aspettavi è disponibile!</div>
-      <div class="wb-books" id="waitlist-banner-books"></div>
-      <div class="wb-actions">
-        <button class="wb-btn" onclick="goTakeFromBanner()">📤 Vai a prenderlo</button>
-        <button class="wb-btn-dismiss" onclick="dismissWaitlistBanner()">✕ Ignora</button>
-      </div>
-    </div>
-  </div>
   <div id="score-widget" class="score-widget" style="display:none" onclick="toggleScoreDetail()">
     <div class="score-flames" id="score-flames"></div>
     <div class="score-info">
@@ -736,44 +711,6 @@
           <div class="po-icon">⚠️</div><div><div class="po-title">Prestiti scaduti</div><div class="po-desc">Solo i libri che avrebbero dovuto essere restituiti.</div></div>
           <button class="btn-pdf btn-pdf-red">Genera PDF</button>
         </div>
-
-        <!-- SEZIONE ETICHETTE -->
-        <div style="margin-top:1.2rem;border-top:2px solid var(--warm);padding-top:1.2rem">
-          <h3 style="font-family:'Poppins',sans-serif;color:var(--brown);font-size:1rem;margin-bottom:.8rem">
-            🏷️ Etichette scaffale
-          </h3>
-          <p style="font-size:.85rem;color:var(--brown-light);margin-bottom:1rem;line-height:1.5">
-            Etichette 48×25mm, 4 per riga su foglio A4. Ogni etichetta contiene posizione e codice a barre ISBN (se disponibile).
-            Usa carta adesiva A4 formato standard.
-          </p>
-          <div class="pdf-panel" style="gap:.6rem">
-            <div class="pdf-option-card" onclick="exportLabels('all')">
-              <div class="po-icon">🏷️</div>
-              <div>
-                <div class="po-title">Tutto il catalogo</div>
-                <div class="po-desc">Etichetta per ogni libro nel catalogo (${_books ? _books.length : '…'} etichette).</div>
-              </div>
-              <button class="btn-pdf" id="btn-labels-all">Genera PDF</button>
-            </div>
-            <div class="pdf-option-card" onclick="exportLabels('filtered')">
-              <div class="po-icon">🔍</div>
-              <div>
-                <div class="po-title">Solo libri filtrati</div>
-                <div class="po-desc">Usa il filtro di ricerca nella tab Libri per selezionare un sottoinsieme.</div>
-              </div>
-              <button class="btn-pdf">Genera PDF</button>
-            </div>
-            <div class="pdf-option-card" onclick="exportLabels('noisbn')">
-              <div class="po-icon">📦</div>
-              <div>
-                <div class="po-title">Solo libri senza ISBN</div>
-                <div class="po-desc">Utile per etichettare i libri del vecchio catalogo non ancora scansionati.</div>
-              </div>
-              <button class="btn-pdf">Genera PDF</button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
     <!-- TAB BACKUP -->
@@ -1828,8 +1765,6 @@ async function doLogin() {
   await Promise.all([refreshMyLoans(), refreshMyScore(), refreshMyNotifications(), refreshMyWishlist()]);
   renderScoreWidget();
   renderNotificationBadge();
-  // Controlla subito se ci sono libri dalla lista d'attesa ora disponibili
-  checkWaitlistAvailable();
 
   document.getElementById('user-badge').style.display = 'flex';
   document.getElementById('user-badge-name').textContent = currentUser;
@@ -2204,18 +2139,13 @@ function showInitialBooks() {
     const inQueue  = taken && _waitlist.some(w => w.bookId === b.id && w.user === currentUser);
     const qLen     = taken ? _waitlist.filter(w => w.bookId === b.id).length : 0;
     const inWishlist = _myWishlist.some(w => w.bookId === b.id);
-    const popCount = popularity[b.id] || 0;
-    const popBadge = popCount >= 3
-      ? `<span style="font-size:.72rem;background:#FFF3DC;color:#8a6d1f;border:1px solid var(--gold);
-                      border-radius:10px;padding:1px 7px;margin-left:6px;">🔥 ${popCount}×</span>`
-      : '';
     const coverEl = `<div class="result-cover-click" onclick="event.stopPropagation();openBookPreview('${b.id}')">` + (b.coverUrl
       ? `<img class="result-cover" src="${b.coverUrl}" alt="" onerror="this.outerHTML='<div class=result-cover-placeholder>📖</div>'" />`
       : `<div class="result-cover-placeholder">📖</div>`) + `</div>`;
     return `<div class="result-item" ${!taken ? `onclick="openTakeModal('${b.id}')"` : 'style="cursor:default"'}>
       ${coverEl}
       <div class="result-body">
-        <div class="result-title">${b.title}${popBadge}${taken ? ' <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>' : ''}</div>
+        <div class="result-title">${b.title}${taken ? ' <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>' : ''}</div>
         <div class="result-meta">${b.author}${b.publisher?' · '+b.publisher:''} &nbsp;·&nbsp; 📍 ${b.location}</div>
         ${b.genre ? `<div class="result-genre">📂 ${b.genre}</div>` : ''}
         <div class="result-actions-row">
@@ -3534,136 +3464,7 @@ async function toggleWishlist(e, bookId) {
   doSearch();
 }
 
-// ── Etichette scaffale ────────────────────────────────────────────────────────
-function _generateBarcodePng(value) {
-  // Genera un codice a barre come data URL usando JsBarcode + canvas
-  try {
-    const canvas = document.createElement('canvas');
-    JsBarcode(canvas, value, {
-      format: 'CODE128',
-      width: 2, height: 28,
-      displayValue: true,
-      fontSize: 9,
-      margin: 2,
-      background: '#ffffff',
-      lineColor: '#000000',
-    });
-    return canvas.toDataURL('image/png');
-  } catch(e) {
-    return null;
-  }
-}
-
-function exportLabels(mode) {
-  const { jsPDF } = window.jspdf;
-
-  // Seleziona i libri in base alla modalità
-  let books;
-  const adminSearch = document.getElementById('admin-search');
-  const q = (adminSearch?.value || '').toLowerCase().trim();
-
-  if (mode === 'all') {
-    books = [..._books].sort((a,b) => a.location.localeCompare(b.location));
-  } else if (mode === 'filtered') {
-    books = q
-      ? _books.filter(b =>
-          b.title.toLowerCase().includes(q) ||
-          b.author.toLowerCase().includes(q) ||
-          b.location.toLowerCase().includes(q) ||
-          (b.genre||'').toLowerCase().includes(q))
-      : [..._books];
-    books.sort((a,b) => a.location.localeCompare(b.location));
-  } else if (mode === 'noisbn') {
-    books = _books.filter(b => !b.isbn).sort((a,b) => a.location.localeCompare(b.location));
-  }
-
-  if (!books.length) { showToast('⚠️ Nessun libro da stampare.'); return; }
-
-  // Layout: A4 portrait, 4 colonne × N righe, etichette 48×25mm
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const PAGE_W = 210, PAGE_H = 297;
-  const MARGIN_X = 6, MARGIN_Y = 10;
-  const LABEL_W = 48, LABEL_H = 25;
-  const GAP_X = 1, GAP_Y = 2;
-  const COLS = 4;
-  const ROWS_PER_PAGE = Math.floor((PAGE_H - MARGIN_Y * 2) / (LABEL_H + GAP_Y));
-
-  const BRN = [92, 61, 46];
-  const GLD = [196, 154, 60];
-
-  let col = 0, row = 0, page = 1;
-
-  books.forEach((book, idx) => {
-    if (idx > 0 && col === 0 && row === 0) {
-      doc.addPage();
-      page++;
-    }
-
-    const x = MARGIN_X + col * (LABEL_W + GAP_X);
-    const y = MARGIN_Y + row * (LABEL_H + GAP_Y);
-
-    // Bordo etichetta
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.2);
-    doc.rect(x, y, LABEL_W, LABEL_H);
-
-    // Striscia colorata in alto (posizione scaffale)
-    doc.setFillColor(...BRN);
-    doc.rect(x, y, LABEL_W, 6, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`📍 ${book.location}`, x + 2, y + 4.2);
-
-    // Titolo (troncato)
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(6);
-    doc.setFont('helvetica', 'bold');
-    const titleLines = doc.splitTextToSize(book.title, LABEL_W - 4);
-    doc.text(titleLines.slice(0, 2), x + 2, y + 9);
-
-    // Autore
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(5.5);
-    doc.setTextColor(100, 80, 60);
-    const authorLine = book.author.length > 28 ? book.author.substring(0, 26) + '…' : book.author;
-    doc.text(authorLine, x + 2, y + 14.5);
-
-    // Codice a barre ISBN (se disponibile)
-    if (book.isbn) {
-      try {
-        const barcodeImg = _generateBarcodePng(book.isbn);
-        if (barcodeImg) {
-          doc.addImage(barcodeImg, 'PNG', x + 1, y + 16, LABEL_W - 2, 8);
-        }
-      } catch(e) {
-        // Fallback: testo ISBN
-        doc.setFontSize(5);
-        doc.setTextColor(80, 80, 80);
-        doc.text(`ISBN: ${book.isbn}`, x + 2, y + 22);
-      }
-    } else {
-      // Senza ISBN: linea tratteggiata per scrittura manuale
-      doc.setDrawColor(...GLD);
-      doc.setLineWidth(0.3);
-      doc.line(x + 2, y + 22, x + LABEL_W - 2, y + 22);
-      doc.setFontSize(4.5);
-      doc.setTextColor(160, 140, 100);
-      doc.text('ISBN non disponibile', x + 2, y + 21);
-    }
-
-    // Avanza posizione
-    col++;
-    if (col >= COLS) { col = 0; row++; }
-    if (row >= ROWS_PER_PAGE) { col = 0; row = 0; }
-  });
-
-  const dateStr = new Date().toLocaleDateString('it-IT').replace(/\//g, '-');
-  doc.save(`etichette_${mode}_${dateStr}.pdf`);
-  showToast(`✅ PDF etichette generato: ${books.length} etichette`);
-}
-
-// ── PDF catalogo/prestiti ─────────────────────────────────────────────────────
+// ── PDF ───────────────────────────────────────────────────────────────────────
 function exportPDF(type) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -4844,42 +4645,6 @@ async function teacherMarkAllRead() {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // NOTIFICHE STUDENTE (campanellino nella home)
-// ── Banner "libro disponibile" (N2) ──────────────────────────────────────────
-let _waitlistAvailableBooks = [];
-
-async function checkWaitlistAvailable() {
-  if (!currentUser || !studentToken) return;
-  try {
-    const result = await api('GET', '/notifications/me', null, 'student');
-    const notifs = result.notifications || [];
-    const available = notifs.filter(n => n.kind === 'waitlist_available' && !n.read);
-    if (!available.length) {
-      document.getElementById('waitlist-banner').classList.remove('show');
-      return;
-    }
-    _waitlistAvailableBooks = available;
-    const lines = available.map(n =>
-      '• ' + n.title.replace('📗 Disponibile: ', '')
-    ).join('\n');
-    document.getElementById('waitlist-banner-books').textContent = lines;
-    document.getElementById('waitlist-banner').classList.add('show');
-  } catch(e) { /* silenzioso */ }
-}
-
-function dismissWaitlistBanner() {
-  document.getElementById('waitlist-banner').classList.remove('show');
-  _waitlistAvailableBooks.forEach(async n => {
-    try { await api('PATCH', `/notifications/${n.id}/read`, null, 'student'); } catch(e) {}
-  });
-  _waitlistAvailableBooks = [];
-  refreshMyNotifications().then(renderNotificationBadge);
-}
-
-function goTakeFromBanner() {
-  dismissWaitlistBanner();
-  goTake();
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 
 let _myNotifications = [];
