@@ -638,6 +638,20 @@
         <div><label>Editore</label><input type="text" id="a-publisher" placeholder="Casa editrice"/></div>
         <div><label>Posizione *</label><input type="text" id="a-location" placeholder="Es. 6.L"/></div>
         <div class="span2"><label>Genere letterario</label><input type="text" id="a-genre" placeholder="Es. romanzo storico / avventura"/></div>
+        <div><label>Lingua</label>
+          <select id="a-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-size:.9rem;font-family:'Poppins',sans-serif;outline:none;">
+            <option value="it" selected>🇮🇹 Italiano</option>
+            <option value="en">🇬🇧 Inglese</option>
+            <option value="fr">🇫🇷 Francese</option>
+            <option value="de">🇩🇪 Tedesco</option>
+            <option value="es">🇪🇸 Spagnolo</option>
+            <option value="pt">🇵🇹 Portoghese</option>
+            <option value="ar">🇸🇦 Arabo</option>
+            <option value="zh">🇨🇳 Cinese</option>
+            <option value="ja">🇯🇵 Giapponese</option>
+            <option value="ru">🇷🇺 Russo</option>
+          </select>
+        </div>
         <div class="full"><button class="btn-add" onclick="addBook()">+ Aggiungi libro</button></div>
       </div>
       <div style="margin-bottom:.8rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
@@ -1416,6 +1430,20 @@
       <div><label>Editore</label><input type="text" id="e-publisher"/></div>
       <div><label>Posizione *</label><input type="text" id="e-location"/></div>
       <div><label>Genere</label><input type="text" id="e-genre"/></div>
+      <div><label>Lingua</label>
+        <select id="e-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-size:.9rem;font-family:'Poppins',sans-serif;outline:none;">
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="en">🇬🇧 Inglese</option>
+          <option value="fr">🇫🇷 Francese</option>
+          <option value="de">🇩🇪 Tedesco</option>
+          <option value="es">🇪🇸 Spagnolo</option>
+          <option value="pt">🇵🇹 Portoghese</option>
+          <option value="ar">🇸🇦 Arabo</option>
+          <option value="zh">🇨🇳 Cinese</option>
+          <option value="ja">🇯🇵 Giapponese</option>
+          <option value="ru">🇷🇺 Russo</option>
+        </select>
+      </div>
       <div class="full"><label>URL Copertina</label><input type="text" id="e-cover" placeholder="https://covers.openlibrary.org/..."/></div>
       <div class="full" id="e-cover-preview-wrap" style="display:none"><img id="e-cover-preview" style="height:80px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.15)"/></div>
     </div>
@@ -3078,6 +3106,7 @@ function openEditBook(id) {
   document.getElementById('e-publisher').value = book.publisher||'';
   document.getElementById('e-location').value  = book.location;
   document.getElementById('e-genre').value     = book.genre||'';
+  document.getElementById('e-language').value  = book.language||'it';
   const coverInput = document.getElementById('e-cover');
   const coverPreview = document.getElementById('e-cover-preview');
   const coverWrap = document.getElementById('e-cover-preview-wrap');
@@ -3098,6 +3127,7 @@ async function saveEditBook() {
       publisher: document.getElementById('e-publisher').value.trim(),
       location: l,
       genre: document.getElementById('e-genre').value.trim(),
+      language: document.getElementById('e-language').value || 'it',
       cover_url: document.getElementById('e-cover').value.trim() || null
     }, 'admin');
     const idx = _books.findIndex(b => b.id === editBookId);
@@ -3256,6 +3286,7 @@ async function addBook() {
       location: l,
       genre: document.getElementById('a-genre').value.trim(),
       isbn: document.getElementById('a-isbn').value.trim(),
+      language: document.getElementById('a-language').value || 'it',
     }, 'admin');
 
     // Cerca copertina subito dopo la creazione
@@ -3272,6 +3303,7 @@ async function addBook() {
 
     _books.push(book);
     ['a-title','a-author','a-publisher','a-location','a-genre','a-isbn'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('a-language').value = 'it';
     renderBooksTable();
     renderStats();
     } catch(e) { showToast('❌ ' + e.message); }
