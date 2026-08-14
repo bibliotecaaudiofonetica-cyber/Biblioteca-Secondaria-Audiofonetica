@@ -97,9 +97,10 @@ class Book(Base):
     publisher = Column(String, default="")
     location  = Column(String, nullable=False)
     genre     = Column(String, default="", index=True)
-    isbn      = Column(String, nullable=True, index=True)  # da scanner/inserimento manuale, non obbligatorio
+    isbn      = Column(String, nullable=True, index=True)
     cover_url            = Column(String, nullable=True)
     openlibrary_checked  = Column(Boolean, default=False, nullable=False, server_default='0')
+    book_status          = Column(String, nullable=False, default="disponibile")  # disponibile|in_riparazione|smarrito
 
     loans     = relationship("Loan", back_populates="book", cascade="all, delete-orphan")
     waitlist  = relationship("Waitlist", back_populates="book", cascade="all, delete-orphan")
@@ -116,7 +117,8 @@ class Book(Base):
             "isbn":      self.isbn,
             "coverUrl":           self.cover_url,
             "openlibraryChecked": self.openlibrary_checked,
-            "available": active_loan is None,
+            "bookStatus":         self.book_status or "disponibile",
+            "available": active_loan is None and (self.book_status or "disponibile") == "disponibile",
         }
 
 
@@ -456,7 +458,70 @@ class StudentBadge(Base):
 # QUIZ / FORM
 # ══════════════════════════════════════════════════════════════════════════════
 
-class Quiz(Base):
+class LibraryMap(Base):
+    """Configurazione mappa biblioteca — un solo record (upsert)."""
+    __tablename__ = "library_map"
+
+    id         = Column(String, primary_key=True, default="main")
+    map_data   = Column(Text, default="{}")  # JSON: {shelves: [{id, name, row, col, color}], cols, rows}
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+    def to_dict(self):
+        return {
+            "id":        self.id,
+            "mapData":   self.map_data,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Reservation(Base):
+    """Prenotazione anticipata di un libro per una data futura."""
+    __tablename__ = "reservations"
+    __table_args__ = (UniqueConstraint("student_name", "book_id", name="uq_reservation_student_book"),)
+
+    id           = Column(String, primary_key=True, default=new_id)
+    book_id      = Column(String, ForeignKey("books.id"), nullable=False, index=True)
+    student_name = Column(String, nullable=False, index=True)
+    reserved_date = Column(DateTime(timezone=True), nullable=False)
+    created_at   = Column(DateTime(timezone=True), default=now_utc)
+    status       = Column(String, default="active")  # active | cancelled | fulfilled
+
+    book = relationship("Book")
+
+    def to_dict(self):
+        return {
+            "id":           self.id,
+            "bookId":       self.book_id,
+            "bookTitle":    self.book.title if self.book else "",
+            "studentName":  self.student_name,
+            "reservedDate": self.reserved_date.isoformat() if self.reserved_date else None,
+            "createdAt":    self.created_at.isoformat() if self.created_at else None,
+            "status":       self.status,
+        }
+
+
+class AccessLog(Base):
+    """Log degli accessi al sistema (30 giorni di retention)."""
+    __tablename__ = "access_logs"
+
+    id         = Column(String, primary_key=True, default=new_id)
+    user_type  = Column(String, nullable=False)   # admin | teacher | student
+    user_name  = Column(String, nullable=False)
+    action     = Column(String, nullable=False)   # login | logout | take_book | return_book | ecc.
+    detail     = Column(String, nullable=True)
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=now_utc, index=True)
+
+    def to_dict(self):
+        return {
+            "id":        self.id,
+            "userType":  self.user_type,
+            "userName":  self.user_name,
+            "action":    self.action,
+            "detail":    self.detail,
+            "ip":        self.ip_address,
+            "createdAt": self.created_at.isoformat() if self.created_at else None,
+        }
     __tablename__ = "quizzes"
 
     id             = Column(String, primary_key=True, default=new_id)

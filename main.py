@@ -60,6 +60,23 @@ def _run_migrations():
             "ALTER TABLE loans ADD COLUMN IF NOT EXISTS teacher_alert_stage INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS password_hash TEXT",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS full_name TEXT",
+            "ALTER TABLE books ADD COLUMN IF NOT EXISTS book_status TEXT NOT NULL DEFAULT 'disponibile'",
+            """CREATE TABLE IF NOT EXISTS access_logs (
+                id TEXT PRIMARY KEY, user_type TEXT NOT NULL, user_name TEXT NOT NULL,
+                action TEXT NOT NULL, detail TEXT, ip_address TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS reservations (
+                id TEXT PRIMARY KEY, book_id TEXT REFERENCES books(id) ON DELETE CASCADE,
+                student_name TEXT NOT NULL, reserved_date TIMESTAMPTZ NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW(), status TEXT DEFAULT 'active',
+                UNIQUE(student_name, book_id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS library_map (
+                id TEXT PRIMARY KEY DEFAULT 'main',
+                map_data TEXT DEFAULT '{}',
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email TEXT",
             "ALTER TABLE class_recommendations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ",
             # Quiz/Form
@@ -103,6 +120,19 @@ def _run_migrations():
             "ALTER TABLE loans ADD COLUMN teacher_alert_stage INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN password_hash TEXT",
             "ALTER TABLE teachers ADD COLUMN full_name TEXT",
+            "ALTER TABLE books ADD COLUMN book_status TEXT NOT NULL DEFAULT 'disponibile'",
+            """CREATE TABLE IF NOT EXISTS access_logs (
+                id TEXT PRIMARY KEY, user_type TEXT NOT NULL, user_name TEXT NOT NULL,
+                action TEXT NOT NULL, detail TEXT, ip_address TEXT, created_at TIMESTAMP
+            )""",
+            """CREATE TABLE IF NOT EXISTS reservations (
+                id TEXT PRIMARY KEY, book_id TEXT, student_name TEXT NOT NULL,
+                reserved_date TIMESTAMP NOT NULL, created_at TIMESTAMP,
+                status TEXT DEFAULT 'active', UNIQUE(student_name, book_id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS library_map (
+                id TEXT PRIMARY KEY, map_data TEXT DEFAULT '{}', updated_at TIMESTAMP
+            )""",
             "ALTER TABLE teachers ADD COLUMN email TEXT",
             "ALTER TABLE class_recommendations ADD COLUMN expires_at TIMESTAMP",
             # Quiz/Form (SQLite)
@@ -193,13 +223,32 @@ class BookCreate(BaseModel):
 
 
 class BookUpdate(BaseModel):
-    title:     Optional[str] = None
-    author:    Optional[str] = None
-    publisher: Optional[str] = None
-    location:  Optional[str] = None
-    genre:     Optional[str] = None
-    isbn:      Optional[str] = None
-    cover_url: Optional[str] = None
+    title:       Optional[str] = None
+    author:      Optional[str] = None
+    publisher:   Optional[str] = None
+    location:    Optional[str] = None
+    genre:       Optional[str] = None
+    isbn:        Optional[str] = None
+    cover_url:   Optional[str] = None
+    book_status: Optional[str] = None  # disponibile|in_riparazione|smarrito
+
+    @field_validator("book_status")
+    @classmethod
+    def validate_status(cls, v):
+        if v and v not in ("disponibile", "in_riparazione", "smarrito"):
+            raise ValueError("Stato non valido")
+        return v
+
+
+class BookStatusUpdate(BaseModel):
+    book_status: str
+
+    @field_validator("book_status")
+    @classmethod
+    def validate_status(cls, v):
+        if v not in ("disponibile", "in_riparazione", "smarrito"):
+            raise ValueError("Stato non valido: usa disponibile, in_riparazione o smarrito")
+        return v
 
 
 class LoanCreate(BaseModel):
@@ -399,6 +448,7 @@ def student_login(body: StudentLogin, request: Request, db: Session = Depends(ge
         raise HTTPException(401, "WRONG_PIN")
 
     token = auth.create_student_token(student.full_name)
+    log_access(db, "student", student.full_name, "login", request=request)
     return {"ok": True, "fullName": student.full_name, "token": token}
 
 
@@ -422,6 +472,7 @@ def teacher_login(body: TeacherLogin, request: Request, db: Session = Depends(ge
         raise HTTPException(401, "WRONG_PASSWORD")
 
     token = auth.create_teacher_token(teacher.id)
+    log_access(db, "teacher", teacher.full_name, "login", request=request)
     return {
         "ok": True, "token": token, "needsPassword": False,
         "teacher": teacher.to_dict(),
@@ -736,6 +787,177 @@ def admin_send_reminder_all(db: Session = Depends(get_db)):
     }
 
 
+def log_access(db: Session, user_type: str, user_name: str,
+               action: str, detail: str = None, request: Request = None):
+    """Registra un accesso. Pulisce automaticamente i log > 30 giorni."""
+    try:
+        ip = request.client.host if request and request.client else None
+        db.add(models.AccessLog(
+            user_type=user_type, user_name=user_name,
+            action=action, detail=detail, ip_address=ip,
+        ))
+        # Pulizia automatica log > 30 giorni
+        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        db.query(models.AccessLog).filter(models.AccessLog.created_at < cutoff).delete()
+        db.commit()
+    except Exception:
+        pass  # Il log non deve mai bloccare il flusso principale
+
+
+@app.get("/admin/access-logs", tags=["Setup"], dependencies=[Depends(auth.require_admin)])
+def get_access_logs(
+    user_type: Optional[str] = None,
+    days: int = 7,
+    db: Session = Depends(get_db),
+):
+    """Restituisce i log di accesso degli ultimi N giorni (max 30)."""
+    days    = min(days, 30)
+    cutoff  = datetime.now(timezone.utc) - timedelta(days=days)
+    query   = db.query(models.AccessLog).filter(models.AccessLog.created_at >= cutoff)
+    if user_type:
+        query = query.filter_by(user_type=user_type)
+    logs = query.order_by(models.AccessLog.created_at.desc()).limit(500).all()
+    return [l.to_dict() for l in logs]
+
+
+# ── Logging automatico sui login ──────────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PRENOTAZIONI ANTICIPATE
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/library-map", tags=["Mappa"])
+def get_library_map(db: Session = Depends(get_db)):
+    """Restituisce la configurazione della mappa biblioteca."""
+    m = db.query(models.LibraryMap).get("main")
+    if not m:
+        return {"mapData": '{"shelves":[],"cols":8,"rows":6}'}
+    return m.to_dict()
+
+
+@app.post("/library-map", tags=["Mappa"], dependencies=[Depends(auth.require_admin)])
+def save_library_map(body: dict, db: Session = Depends(get_db)):
+    """Salva la configurazione della mappa (upsert)."""
+    import json as _j
+    m = db.query(models.LibraryMap).get("main")
+    if not m:
+        m = models.LibraryMap(id="main")
+        db.add(m)
+    m.map_data = _j.dumps(body.get("map_data", {}))
+    m.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"ok": True}
+
+
+class ReservationCreate(BaseModel):
+    book_id: str
+    reserved_date: str  # ISO date string es. "2026-09-15"
+
+
+@app.post("/student/reservations", tags=["Prenotazioni"])
+def create_reservation(body: ReservationCreate, db: Session = Depends(get_db),
+                       sp: dict = Depends(auth.require_student)):
+    student_name = sp["name"]
+    book = db.query(models.Book).get(body.book_id)
+    if not book:
+        raise HTTPException(404, "Libro non trovato")
+    if book.book_status not in ("disponibile", None, ""):
+        raise HTTPException(400, f"Il libro non è disponibile ({book.book_status})")
+    active_loan = db.query(models.Loan).filter_by(book_id=body.book_id, returned=False).first()
+    if active_loan:
+        raise HTTPException(400, "Il libro è in prestito — usa la lista d'attesa")
+    existing = db.query(models.Reservation).filter_by(student_name=student_name, status="active").first()
+    if existing:
+        raise HTTPException(400, f"Hai già una prenotazione attiva per '{existing.book.title if existing.book else '?'}'. Cancellala prima.")
+    book_reserved = db.query(models.Reservation).filter_by(book_id=body.book_id, status="active").first()
+    if book_reserved:
+        raise HTTPException(400, "Questo libro è già prenotato da un altro studente.")
+    try:
+        reserved_date = datetime.fromisoformat(body.reserved_date).replace(tzinfo=timezone.utc)
+    except ValueError:
+        raise HTTPException(400, "Data non valida")
+    if reserved_date.date() <= datetime.now(timezone.utc).date():
+        raise HTTPException(400, "La data deve essere futura")
+    res = models.Reservation(book_id=body.book_id, student_name=student_name, reserved_date=reserved_date)
+    db.add(res)
+    db.commit()
+    db.refresh(res)
+    return res.to_dict()
+
+
+@app.get("/student/reservations", tags=["Prenotazioni"])
+def get_my_reservations(db: Session = Depends(get_db),
+                        sp: dict = Depends(auth.require_student)):
+    return [r.to_dict() for r in db.query(models.Reservation).filter_by(
+        student_name=sp["name"], status="active").all()]
+
+
+@app.delete("/student/reservations/{reservation_id}", tags=["Prenotazioni"])
+def cancel_reservation(reservation_id: str, db: Session = Depends(get_db),
+                       sp: dict = Depends(auth.require_student)):
+    res = db.query(models.Reservation).filter_by(id=reservation_id, student_name=sp["name"]).first()
+    if not res:
+        raise HTTPException(404, "Prenotazione non trovata")
+    res.status = "cancelled"
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/books/{book_id}/reservation", tags=["Prenotazioni"])
+def get_book_reservation(book_id: str, db: Session = Depends(get_db)):
+    res = db.query(models.Reservation).filter_by(book_id=book_id, status="active").first()
+    return res.to_dict() if res else None
+
+
+@app.get("/admin/reservations", tags=["Prenotazioni"],
+         dependencies=[Depends(auth.require_admin)])
+def admin_list_reservations(db: Session = Depends(get_db)):
+    return [r.to_dict() for r in db.query(models.Reservation).filter_by(status="active")\
+        .order_by(models.Reservation.reserved_date).all()]
+
+
+@app.post("/admin/new-school-year", tags=["Setup"], dependencies=[Depends(auth.require_admin)])
+def new_school_year(db: Session = Depends(get_db)):
+    """
+    Cambio anno scolastico:
+    - Classi con numero 1 → 2, 2 → 3
+    - Classi con numero 3 → eliminate (studenti rimangono senza classe)
+    - Punteggi e badge azzerati per tutti gli studenti
+    """
+    classes = db.query(models.SchoolClass).all()
+    promoted = 0
+    deleted  = 0
+    for cls in classes:
+        # Estrae numero dalla classe (es. "2A" → 2, "3B" → 3)
+        num_str = ''.join(c for c in cls.name if c.isdigit())
+        letter  = ''.join(c for c in cls.name if not c.isdigit())
+        if not num_str:
+            continue
+        num = int(num_str)
+        if num == 3:
+            # Disassocia gli studenti prima di eliminare la classe
+            db.query(models.Student).filter_by(class_id=cls.id).update({"class_id": None})
+            db.delete(cls)
+            deleted += 1
+        elif num in (1, 2):
+            cls.name = f"{num+1}{letter}"
+            promoted += 1
+    db.flush()
+
+    # Azzera punteggi e badge di tutti gli studenti
+    students_reset = db.query(models.Student).update({"score": 0})
+    current_year = f"{datetime.now().year}/{datetime.now().year+1}"
+    db.query(models.StudentBadge).filter_by(school_year=current_year).delete()
+    db.commit()
+
+    return {
+        "ok": True,
+        "promoted": promoted,
+        "deleted": deleted,
+        "studentsReset": students_reset,
+    }
+
+
 @app.post("/admin/broadcast", tags=["Messaggi"], dependencies=[Depends(auth.require_admin)])
 def admin_broadcast(body: BroadcastMessage, db: Session = Depends(get_db)):
     """
@@ -974,6 +1196,22 @@ def update_book(book_id: str, data: BookUpdate, db: Session = Depends(get_db)):
         raise HTTPException(404, "Libro non trovato")
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(book, field, value)
+    db.commit()
+    db.refresh(book)
+    return book.to_dict()
+
+
+@app.patch("/books/{book_id}/status", tags=["Libri"], dependencies=[Depends(auth.require_admin)])
+def update_book_status(book_id: str, data: BookStatusUpdate, db: Session = Depends(get_db)):
+    """Cambia lo stato di un libro: disponibile | in_riparazione | smarrito."""
+    book = db.query(models.Book).get(book_id)
+    if not book:
+        raise HTTPException(404, "Libro non trovato")
+    if data.book_status != "disponibile":
+        active = db.query(models.Loan).filter_by(book_id=book_id, returned=False).first()
+        if active:
+            raise HTTPException(400, f"Impossibile cambiare stato: libro in prestito a {active.user}")
+    book.book_status = data.book_status
     db.commit()
     db.refresh(book)
     return book.to_dict()
@@ -1529,6 +1767,7 @@ def return_book(loan_id: str, db: Session = Depends(get_db),
     first_in_queue = queue[0].user if queue else None
     if first_in_queue:
         _notify_waitlist_available(db, loan.book_id, loan.book_title, first_in_queue)
+    log_access(db, "student", sp["name"], "return_book", detail=loan.book_title)
     return {"loan": loan.to_dict(), "nextInQueue": first_in_queue, "gamification": gamification_result}
 
 
@@ -3445,6 +3684,52 @@ def teacher_publish_results(quiz_id: str, db: Session = Depends(get_db),
 
 
 # ── Endpoint studente ────────────────────────────────────────────────────────
+
+@app.post("/student/pass-book", tags=["Studenti"])
+def pass_book(body: dict, db: Session = Depends(get_db),
+              sp: dict = Depends(auth.require_student)):
+    """Invia un consiglio di lettura a un altro studente."""
+    recipient_name = body.get("recipient_name", "").strip()
+    book_title     = body.get("book_title", "").strip()
+    sender_name    = sp["name"]
+    if not recipient_name or not book_title:
+        raise HTTPException(400, "Dati mancanti")
+    recipient = db.query(models.Student).filter_by(full_name=recipient_name, active=True).first()
+    if not recipient:
+        raise HTTPException(404, "Studente non trovato")
+    # Notifica interna
+    notif = models.Notification(
+        recipient_type="student",
+        recipient_id=recipient_name,
+        kind="book_recommendation",
+        title=f"📚 {sender_name} ti consiglia un libro!",
+        body=f'"{book_title}" — un consiglio di lettura da {sender_name}.',
+    )
+    db.add(notif)
+    db.commit()
+    # Email (se il destinatario ha un'email)
+    if recipient.email:
+        html = email_service._base_template(
+            "Un consiglio di lettura", "📚", "#C49A3C",
+            f"""<p style="font-size:15px;color:#1A1208;margin:0 0 14px;">
+                  Ciao <strong>{recipient_name}</strong>! 👋
+                </p>
+                <p style="font-size:15px;color:#1A1208;margin:0 0 18px;">
+                  <strong>{sender_name}</strong> ti ha appena consigliato un libro:
+                </p>
+                {email_service._info_table(("📖 Libro", book_title))}
+                <p style="font-size:14px;color:#8B6550;margin:0;">
+                  Cercalo in biblioteca e dagli un'occhiata! 😊
+                </p>"""
+        )
+        email_service.send_email(
+            to_email=recipient.email,
+            to_name=recipient_name,
+            subject=f"📚 {sender_name} ti consiglia: {book_title}",
+            html_body=html,
+        )
+    return {"ok": True}
+
 
 @app.get("/student/quizzes/available", tags=["Quiz"])
 def student_available_quizzes(db: Session = Depends(get_db),
