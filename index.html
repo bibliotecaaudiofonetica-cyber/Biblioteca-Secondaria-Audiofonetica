@@ -611,7 +611,6 @@
   .student-map-cell.empty{background:white}
   .student-map-cell.highlighted{box-shadow:0 0 0 3px var(--gold);animation:mapPulse 1.5s ease infinite}
   @keyframes mapPulse{0%,100%{box-shadow:0 0 0 3px var(--gold)}50%{box-shadow:0 0 0 6px rgba(196,154,60,.4)}}
-</style>
   .loans-cal-wrap{margin-bottom:1.2rem}
   .loans-cal-toggle{display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center}
   .loans-cal-toggle .cal-view-btn{background:var(--warm);color:var(--brown);border:none;border-radius:8px;
@@ -634,7 +633,6 @@
   .loans-week-row{display:contents}
   .loans-week-label{display:flex;align-items:center;font-size:.75rem;color:var(--brown-light);font-weight:600;padding:4px}
   .loans-week-cell{background:var(--cream);border-radius:6px;padding:4px;min-height:40px}
-</style>
   .cal-wrap{user-select:none}
   .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
   .cal-nav{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--brown);padding:4px 8px;border-radius:6px}
@@ -651,7 +649,6 @@
   .cal-day.reserved{background:#FDECEA;color:var(--red);cursor:not-allowed}
   body.dark .cal-day{color:var(--ink)}
   body.dark .cal-day.disabled{color:#444}
-</style>
   .autocomplete-wrap{position:relative}
   .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--gold);
     border-radius:0 0 10px 10px;z-index:500;max-height:280px;overflow-y:auto;box-shadow:var(--shadow-lg);display:none}
@@ -666,7 +663,6 @@
   body.dark .autocomplete-dropdown{background:#252018;border-color:var(--gold)}
   body.dark .ac-item:hover{background:#2A2420}
   body.dark .ac-title{color:#F5EFE6}
-</style>
   .tc-tab{background:none;border:none;color:rgba(255,255,255,0.65);font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:600;padding:10px 22px;cursor:pointer;border-radius:10px 10px 0 0;transition:all .2s;white-space:nowrap}
   .tc-tab:hover{color:white;background:rgba(255,255,255,0.1)}
   .tc-tab.active{background:var(--cream);color:var(--brown);border-radius:10px 10px 0 0}
@@ -2720,13 +2716,14 @@ function showInitialBooks() {
     const coverEl = `<div class="result-cover-click" onclick="event.stopPropagation();openBookPreview('${b.id}')">` + (b.coverUrl
       ? `<img class="result-cover" src="${b.coverUrl}" alt="" onerror="this.outerHTML='<div class=result-cover-placeholder>📖</div>'" />`
       : `<div class="result-cover-placeholder">📖</div>`) + `</div>`;
-    return `<div class="result-item" ${!notAvail ? `onclick="openTakeModal('${b.id}')"` : 'style="cursor:default"'}>
+    return `<div class="result-item" onclick="openBookPreview('${b.id}')">
       ${coverEl}
       <div class="result-body">
         <div class="result-title">${b.title}${notAvail ? ` <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>${statusTag}` : ''}</div>
         <div class="result-meta">${b.author}${b.publisher?' · '+b.publisher:''} &nbsp;·&nbsp; 📍 ${b.location}</div>
         ${b.genre ? `<div class="result-genre">📂 ${b.genre}</div>` : ''}
         <div class="result-actions-row">
+          ${!notAvail ? `<button class="btn-confirm" style="padding:6px 14px;font-size:.82rem" onclick="event.stopPropagation();openTakeModal('${b.id}')">📖 Prendi in prestito</button>` : ''}
           <button class="btn-wishlist ${inWishlist?'active':''}" onclick="toggleWishlist(event,'${b.id}')">${inWishlist ? '💛 Nella tua lista' : '🤍 Da leggere'}</button>
           ${taken ? `<button class="btn-waitlist ${inQueue?'in-queue':''}" onclick="toggleWaitlist(event,'${b.id}')">${inQueue ? "✓ In lista d'attesa" : `🔔 Avvisami${qLen?' ('+qLen+')':''}`}</button>` : ''}
           ${!notAvail ? `<button class="btn-waitlist" onclick="event.stopPropagation();openReservationModal('${b.id}','${b.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">📅 Prenota</button>` : ''}
@@ -2855,13 +2852,14 @@ function doSearch() {
     const coverEl = `<div class="result-cover-click" onclick="event.stopPropagation();openBookPreview('${b.id}')">` + (b.coverUrl
       ? `<img class="result-cover" src="${b.coverUrl}" alt="" onerror="this.outerHTML='<div class=result-cover-placeholder>📖</div>'" />`
       : `<div class="result-cover-placeholder">📖</div>`) + `</div>`;
-    return `<div class="result-item" ${!taken ? `onclick="openTakeModal('${b.id}')"` : 'style="cursor:default"'}>
+    return `<div class="result-item" onclick="openBookPreview('${b.id}')">
       ${coverEl}
       <div class="result-body">
         <div class="result-title">${hl(b.title)}${taken ? ' <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>' : ''}</div>
         <div class="result-meta">${b.author}${b.publisher?' · '+b.publisher:''} &nbsp;·&nbsp; 📍 ${b.location}</div>
         ${b.genre ? `<div class="result-genre">📂 ${b.genre}</div>` : ''}
         <div class="result-actions-row">
+          ${!taken ? `<button class="btn-confirm" style="padding:6px 14px;font-size:.82rem" onclick="event.stopPropagation();openTakeModal('${b.id}')">📖 Prendi in prestito</button>` : ''}
           <button class="btn-wishlist ${inWishlist?'active':''}" onclick="toggleWishlist(event,'${b.id}')">${inWishlist ? '💛 Nella tua lista' : '🤍 Da leggere'}</button>
           ${taken ? `<button class="btn-waitlist ${inQueue?'in-queue':''}" onclick="toggleWaitlist(event,'${b.id}')">${inQueue ? "✓ In lista d'attesa" : `🔔 Avvisami${qLen?' ('+qLen+')':''}`}</button>` : ''}
         </div>
@@ -3434,7 +3432,7 @@ async function checkAdmin() {
 }
 
 function switchTab(tab) {
-  ['books','loans','history','pdf','students','classes','teachers','messages'].forEach((t,i) => {
+  ['books','loans','history','pdf','students','classes','teachers','messages','logs','map'].forEach((t,i) => {
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active', t===tab);
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
