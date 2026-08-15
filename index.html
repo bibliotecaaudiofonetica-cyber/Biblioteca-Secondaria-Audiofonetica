@@ -1523,6 +1523,14 @@
     <h3>Conferma prestito</h3>
     <p id="modal-take-msg">Vuoi davvero prendere questo libro?</p>
     <div class="book-preview" id="modal-take-book"></div>
+    <div id="take-map" style="display:none;margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;
+                  letter-spacing:.5px;margin-bottom:.5rem">🗺️ Dove trovarlo</div>
+      <div class="student-map-wrap">
+        <div id="take-map-grid" class="student-map-grid"></div>
+        <div id="take-map-label" style="font-size:.8rem;color:var(--brown-light);margin-top:.5rem"></div>
+      </div>
+    </div>
     <div class="days-input-row">
       <label>Quando lo riporti?</label>
       <input type="date" id="due-date-input" class="due-date-input" onchange="updateDueDateHint()"/>
@@ -1598,6 +1606,14 @@
     <h3>Restituisci libro</h3>
     <div class="book-preview" id="modal-return-book"></div>
     <p id="modal-return-position" class="position-badge">📍 <span></span></p>
+    <div id="return-map" style="display:none;margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;
+                  letter-spacing:.5px;margin-bottom:.5rem">🗺️ Dove rimetterlo</div>
+      <div class="student-map-wrap">
+        <div id="return-map-grid" class="student-map-grid"></div>
+        <div id="return-map-label" style="font-size:.8rem;color:var(--brown-light);margin-top:.5rem"></div>
+      </div>
+    </div>
     <p>Rimetti il libro nella posizione indicata, poi clicca conferma.</p>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('modal-return')">Annulla</button>
@@ -3050,9 +3066,12 @@ async function openBookPreview(bookId) {
   // Mostra mappa posizione libro
   renderBookMap(book.location);
 
-  // Fetch sinossi da Google Books (migliore supporto italiano)
-  if (book.isbn) {
-    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&langRestrict=it`)
+  // Fetch sinossi da Google Books (migliore supporto italiano).
+  // Se il libro ha l'ISBN, si cerca per ISBN (più preciso); altrimenti (o se
+  // la ricerca per ISBN non trova nulla) si fa un fallback per titolo+autore.
+  const fetchSynopsisByTitleAuthor = () => {
+    const q = encodeURIComponent(`intitle:${book.title} inauthor:${book.author}`);
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&langRestrict=it&maxResults=1`)
       .then(r => r.json())
       .then(data => {
         const item = data.items?.[0];
@@ -3063,6 +3082,24 @@ async function openBookPreview(bookId) {
         }
       })
       .catch(() => {});
+  };
+
+  if (book.isbn) {
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&langRestrict=it`)
+      .then(r => r.json())
+      .then(data => {
+        const item = data.items?.[0];
+        const desc = item?.volumeInfo?.description;
+        if (desc) {
+          synEl.textContent = desc.length > 400 ? desc.substring(0, 397) + '…' : desc;
+          synEl.style.display = 'block';
+        } else {
+          fetchSynopsisByTitleAuthor();
+        }
+      })
+      .catch(() => { fetchSynopsisByTitleAuthor(); });
+  } else {
+    fetchSynopsisByTitleAuthor();
   }
 
   try {
@@ -3134,6 +3171,7 @@ function openTakeModal(bookId) {
   updateDueDateHint();
 
   document.getElementById('modal-take-msg').textContent = `${currentUser}, vuoi prendere questo libro?`;
+  renderBookMap(book.location, 'take');
   openModal('modal-take');
 }
 
@@ -3174,6 +3212,7 @@ function openReturnModal(bookId) {
   selectedBook = _books.find(b => b.id === bookId);
   document.getElementById('modal-return-book').innerHTML = `<strong>${selectedBook.title}</strong><br><small>${selectedBook.author}</small>`;
   document.querySelector('#modal-return-position span').textContent = selectedBook.location;
+  renderBookMap(selectedBook.location, 'return');
   openModal('modal-return');
 }
 
@@ -6529,20 +6568,26 @@ async function loadStudentMap() {
   } catch(e) { _studentMapData = { shelves:[], cols:8, rows:6 }; }
 }
 
-async function renderBookMap(bookLocation) {
-  const mapEl  = document.getElementById('bp-map');
-  const gridEl = document.getElementById('bp-map-grid');
-  const lblEl  = document.getElementById('bp-map-label');
+async function renderBookMap(bookLocation, prefix = 'bp') {
+  const mapEl  = document.getElementById(prefix + '-map');
+  const gridEl = document.getElementById(prefix + '-map-grid');
+  const lblEl  = document.getElementById(prefix + '-map-label');
   if (!mapEl) return;
   mapEl.style.display = 'none';
   if (!bookLocation) return;
   await loadStudentMap();
   const { shelves=[], cols=8, rows=6 } = _studentMapData;
   if (!shelves.length) return;
-  const locPart = bookLocation.trim().toUpperCase().split(/[\.\-\/\s]/)[0];
+  // Il codice posizione è nel formato "numero.LETTERA" (es. "6.L"): la LETTERA
+  // è quella che identifica lo scaffale fisico, non il numero che la precede.
+  // Se il codice non contiene lettere (vecchio schema solo numerico), si usa
+  // come fallback il primo segmento prima del separatore.
+  const upperLoc = bookLocation.trim().toUpperCase();
+  const letterMatch = upperLoc.match(/[A-Z]+/);
+  const locPart = letterMatch ? letterMatch[0] : upperLoc.split(/[\.\-\/\s]/)[0];
   const target  = shelves.find(s =>
     s.name.toUpperCase() === locPart ||
-    s.name.toUpperCase() === bookLocation.trim().toUpperCase()
+    s.name.toUpperCase() === upperLoc
   );
   if (!target) return;
   gridEl.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
