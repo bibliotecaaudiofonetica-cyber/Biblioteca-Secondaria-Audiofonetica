@@ -97,18 +97,16 @@ class Book(Base):
     publisher = Column(String, default="")
     location  = Column(String, nullable=False)
     genre     = Column(String, default="", index=True)
-    isbn      = Column(String, nullable=True, index=True)  # da scanner/inserimento manuale, non obbligatorio
-    language  = Column(String, nullable=True, default="it")  # codice ISO: it, en, fr, de, es
+    isbn      = Column(String, nullable=True, index=True)
     cover_url            = Column(String, nullable=True)
     openlibrary_checked  = Column(Boolean, default=False, nullable=False, server_default='0')
+    book_status          = Column(String, nullable=False, default="disponibile")  # disponibile|in_riparazione|smarrito
 
     loans     = relationship("Loan", back_populates="book", cascade="all, delete-orphan")
     waitlist  = relationship("Waitlist", back_populates="book", cascade="all, delete-orphan")
 
     def to_dict(self):
         active_loan = next((l for l in self.loans if not l.returned), None)
-        reviews = [r for r in getattr(self, 'reviews', []) if r.rating]
-        avg = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else None
         return {
             "id":        self.id,
             "title":     self.title,
@@ -119,10 +117,8 @@ class Book(Base):
             "isbn":      self.isbn,
             "coverUrl":           self.cover_url,
             "openlibraryChecked": self.openlibrary_checked,
-            "available":          active_loan is None,
-            "averageRating":      avg,
-            "reviewCount":        len(reviews),
-            "language":           self.language or "it",
+            "bookStatus":         self.book_status or "disponibile",
+            "available": active_loan is None and (self.book_status or "disponibile") == "disponibile",
         }
 
 
@@ -462,7 +458,70 @@ class StudentBadge(Base):
 # QUIZ / FORM
 # ══════════════════════════════════════════════════════════════════════════════
 
-class Quiz(Base):
+class LibraryMap(Base):
+    """Configurazione mappa biblioteca — un solo record (upsert)."""
+    __tablename__ = "library_map"
+
+    id         = Column(String, primary_key=True, default="main")
+    map_data   = Column(Text, default="{}")  # JSON: {shelves: [{id, name, row, col, color}], cols, rows}
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+    def to_dict(self):
+        return {
+            "id":        self.id,
+            "mapData":   self.map_data,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Reservation(Base):
+    """Prenotazione anticipata di un libro per una data futura."""
+    __tablename__ = "reservations"
+    __table_args__ = (UniqueConstraint("student_name", "book_id", name="uq_reservation_student_book"),)
+
+    id           = Column(String, primary_key=True, default=new_id)
+    book_id      = Column(String, ForeignKey("books.id"), nullable=False, index=True)
+    student_name = Column(String, nullable=False, index=True)
+    reserved_date = Column(DateTime(timezone=True), nullable=False)
+    created_at   = Column(DateTime(timezone=True), default=now_utc)
+    status       = Column(String, default="active")  # active | cancelled | fulfilled
+
+    book = relationship("Book")
+
+    def to_dict(self):
+        return {
+            "id":           self.id,
+            "bookId":       self.book_id,
+            "bookTitle":    self.book.title if self.book else "",
+            "studentName":  self.student_name,
+            "reservedDate": self.reserved_date.isoformat() if self.reserved_date else None,
+            "createdAt":    self.created_at.isoformat() if self.created_at else None,
+            "status":       self.status,
+        }
+
+
+class AccessLog(Base):
+    """Log degli accessi al sistema (30 giorni di retention)."""
+    __tablename__ = "access_logs"
+
+    id         = Column(String, primary_key=True, default=new_id)
+    user_type  = Column(String, nullable=False)   # admin | teacher | student
+    user_name  = Column(String, nullable=False)
+    action     = Column(String, nullable=False)   # login | logout | take_book | return_book | ecc.
+    detail     = Column(String, nullable=True)
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=now_utc, index=True)
+
+    def to_dict(self):
+        return {
+            "id":        self.id,
+            "userType":  self.user_type,
+            "userName":  self.user_name,
+            "action":    self.action,
+            "detail":    self.detail,
+            "ip":        self.ip_address,
+            "createdAt": self.created_at.isoformat() if self.created_at else None,
+        }
     __tablename__ = "quizzes"
 
     id             = Column(String, primary_key=True, default=new_id)
@@ -470,20 +529,21 @@ class Quiz(Base):
     title          = Column(String, nullable=False)
     subtitle       = Column(String, default="")
     quiz_type      = Column(String, nullable=False, default="form")  # "form" | "quiz"
-    timer_minutes  = Column(Integer, nullable=True)
+    timer_minutes  = Column(Integer, nullable=True)   # None = nessun timer
     status         = Column(String, nullable=False, default="draft")  # draft|active|closed
+    # Assegnazione: class_id OPPURE lista student_names in JSON
     class_id       = Column(String, ForeignKey("classes.id"), nullable=True)
-    student_names  = Column(Text, default="[]")
+    student_names  = Column(Text, default="[]")  # JSON list
     created_at     = Column(DateTime(timezone=True), default=now_utc)
     updated_at     = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
-    teacher      = relationship("Teacher")
+    teacher    = relationship("Teacher")
     school_class = relationship("SchoolClass")
-    questions    = relationship("Question", back_populates="quiz",
-                                cascade="all, delete-orphan",
-                                order_by="Question.order")
-    submissions  = relationship("Submission", back_populates="quiz",
-                                cascade="all, delete-orphan")
+    questions  = relationship("Question", back_populates="quiz",
+                              cascade="all, delete-orphan",
+                              order_by="Question.order")
+    submissions = relationship("Submission", back_populates="quiz",
+                               cascade="all, delete-orphan")
 
     def to_dict(self, include_questions=False):
         d = {
@@ -511,11 +571,12 @@ class Question(Base):
     quiz_id         = Column(String, ForeignKey("quizzes.id"), nullable=False, index=True)
     order           = Column(Integer, nullable=False, default=0)
     text            = Column(String, nullable=False)
+    # short|paragraph|multiple|checkbox|dropdown|ranking
     question_type   = Column(String, nullable=False, default="short")
     required        = Column(Boolean, default=False)
-    options         = Column(Text, default="[]")
-    correct_answers = Column(Text, default="[]")
-    points          = Column(Integer, default=1)
+    options         = Column(Text, default="[]")   # JSON: lista opzioni
+    correct_answers = Column(Text, default="[]")   # JSON: risposte corrette (solo quiz)
+    points          = Column(Integer, default=1)   # punti per risposta corretta
 
     quiz = relationship("Quiz", back_populates="questions")
 
@@ -537,15 +598,15 @@ class Submission(Base):
     __tablename__ = "submissions"
     __table_args__ = (UniqueConstraint("quiz_id", "student_name", name="uq_submission_student_quiz"),)
 
-    id              = Column(String, primary_key=True, default=new_id)
-    quiz_id         = Column(String, ForeignKey("quizzes.id"), nullable=False, index=True)
-    student_name    = Column(String, nullable=False, index=True)
-    started_at      = Column(DateTime(timezone=True), default=now_utc)
-    submitted_at    = Column(DateTime(timezone=True), nullable=True)
-    answers         = Column(Text, default="{}")
-    score           = Column(Integer, nullable=True)
-    max_score       = Column(Integer, nullable=True)
-    score_published = Column(Boolean, default=False)
+    id               = Column(String, primary_key=True, default=new_id)
+    quiz_id          = Column(String, ForeignKey("quizzes.id"), nullable=False, index=True)
+    student_name     = Column(String, nullable=False, index=True)
+    started_at       = Column(DateTime(timezone=True), default=now_utc)
+    submitted_at     = Column(DateTime(timezone=True), nullable=True)
+    answers          = Column(Text, default="{}")   # JSON {question_id: answer}
+    score            = Column(Integer, nullable=True)
+    max_score        = Column(Integer, nullable=True)
+    score_published  = Column(Boolean, default=False)
 
     quiz = relationship("Quiz", back_populates="submissions")
 
@@ -560,79 +621,4 @@ class Submission(Base):
             "score":          self.score,
             "maxScore":       self.max_score,
             "scorePublished": self.score_published,
-        }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MAPPA BIBLIOTECA
-# ══════════════════════════════════════════════════════════════════════════════
-
-class LibraryMap(Base):
-    __tablename__ = "library_map"
-
-    id         = Column(String, primary_key=True, default="main")
-    map_data   = Column(Text, default="{}")
-    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
-
-    def to_dict(self):
-        return {
-            "id":        self.id,
-            "mapData":   self.map_data,
-            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
-        }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PRENOTAZIONI ANTICIPATE
-# ══════════════════════════════════════════════════════════════════════════════
-
-class Reservation(Base):
-    __tablename__ = "reservations"
-    __table_args__ = (UniqueConstraint("student_name", "book_id", name="uq_reservation_student_book"),)
-
-    id            = Column(String, primary_key=True, default=new_id)
-    book_id       = Column(String, ForeignKey("books.id"), nullable=False, index=True)
-    student_name  = Column(String, nullable=False, index=True)
-    reserved_date = Column(DateTime(timezone=True), nullable=False)
-    created_at    = Column(DateTime(timezone=True), default=now_utc)
-    status        = Column(String, default="active")  # active | cancelled | fulfilled
-
-    book = relationship("Book")
-
-    def to_dict(self):
-        return {
-            "id":           self.id,
-            "bookId":       self.book_id,
-            "bookTitle":    self.book.title if self.book else "",
-            "studentName":  self.student_name,
-            "reservedDate": self.reserved_date.isoformat() if self.reserved_date else None,
-            "createdAt":    self.created_at.isoformat() if self.created_at else None,
-            "status":       self.status,
-        }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# LOG ACCESSI
-# ══════════════════════════════════════════════════════════════════════════════
-
-class AccessLog(Base):
-    __tablename__ = "access_logs"
-
-    id         = Column(String, primary_key=True, default=new_id)
-    user_type  = Column(String, nullable=False)
-    user_name  = Column(String, nullable=False)
-    action     = Column(String, nullable=False)
-    detail     = Column(String, nullable=True)
-    ip_address = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=now_utc, index=True)
-
-    def to_dict(self):
-        return {
-            "id":        self.id,
-            "userType":  self.user_type,
-            "userName":  self.user_name,
-            "action":    self.action,
-            "detail":    self.detail,
-            "ip":        self.ip_address,
-            "createdAt": self.created_at.isoformat() if self.created_at else None,
         }

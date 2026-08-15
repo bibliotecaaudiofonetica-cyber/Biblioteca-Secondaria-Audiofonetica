@@ -15,9 +15,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css">
 <style>
   :root {
     --cream:#F5F0E8;--warm:#EDE5D4;--brown:#5C3D2E;--brown-light:#8B6550;
@@ -25,6 +27,68 @@
     --green:#2E6B45;--shadow:0 4px 24px rgba(92,61,46,0.12);
     --shadow-lg:0 12px 48px rgba(92,61,46,0.18);
   }
+  body.dark {
+    --cream:#1A1612;--warm:#2A2420;--brown:#D4A574;--brown-light:#A08060;
+    --gold:#E8C46A;--gold-light:#C49A3C;--ink:#F0EBE3;--red:#E05A50;
+    --green:#4A9B6A;--shadow:0 4px 24px rgba(0,0,0,0.4);
+    --shadow-lg:0 12px 48px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+  body.dark strong, body.dark b { color:#F5EFE6 }
+  body.dark h1, body.dark h2, body.dark h3, body.dark h4 { color:#F5EFE6 }
+  body.dark .result-title { color:#F5EFE6 }
+  body.dark .po-title, body.dark .bc-title { color:#F5EFE6 }
+  body.dark .profile-section-title { color:#F5EFE6 }
+  body.dark .lr-name, body.dark .lr-book { color:#F5EFE6 }
+  body.dark .book-preview-title { color:#F5EFE6 }
+  body.dark .quiz-q-text { color:#F5EFE6 }
+  body.dark .overdue-info strong { color:#F5EFE6 }
+  body.dark .teacher-class-card { background:#252018 }
+  body.dark .teacher-class-card strong { color:#F5EFE6 }
+  /* ── OpenDyslexic ── */
+  body.dyslexic, body.dyslexic * {
+    font-family: 'OpenDyslexic', sans-serif !important;
+    letter-spacing: .04em;
+    word-spacing: .12em;
+    line-height: 1.7;
+  }
+  /* ── Testo grande ── */
+  body.large-text { font-size: 120% }
+  body.large-text .login-card { padding: 2.4rem }
+  body.large-text input, body.large-text textarea, body.large-text select { font-size: 1.05rem !important; padding: 12px 16px !important }
+  body.large-text .btn-primary, body.large-text .btn-confirm, body.large-text .btn-cancel { font-size: 1rem !important; padding: 12px 24px !important }
+  body.large-text .result-title { font-size: 1.05rem }
+  body.large-text .result-meta { font-size: .92rem }
+  body.large-text .chat-msg { font-size: .96rem }
+  /* Toggle accessibilità */
+  #acc-toggle-dyslexic, #acc-toggle-large { background:none;border:none;font-size:1.1rem;cursor:pointer;
+    padding:4px 7px;border-radius:8px;transition:background .2s;color:var(--brown-light);opacity:.7 }
+  #acc-toggle-dyslexic:hover, #acc-toggle-large:hover { background:rgba(92,61,46,.1);opacity:1 }
+  #acc-toggle-dyslexic.active, #acc-toggle-large.active { opacity:1;background:rgba(196,154,60,.15);color:var(--brown) }
+  body.dark header{background:#111;border-bottom-color:#C49A3C}
+  body.dark .login-card,body.dark .modal{background:#252018;border-color:rgba(196,154,60,0.2)}
+  body.dark input,body.dark textarea,body.dark select{background:#1A1612;color:var(--ink);border-color:var(--warm)}
+  body.dark input::placeholder,body.dark textarea::placeholder{color:#6a5a4a}
+  body.dark .result-item,body.dark .loan-row,body.dark .teacher-overdue-card{background:#252018;border-color:var(--warm)}
+  body.dark .students-table table{background:#1A1612}
+  body.dark .students-table th{background:#2A2420;color:var(--brown)}
+  body.dark .students-table td{border-color:#2A2420}
+  body.dark .students-table tr:hover td{background:#252018}
+  body.dark .tab-btn{background:#2A2420;color:var(--brown-light)}
+  body.dark .tab-btn.active{background:var(--brown);color:#1A1612}
+  body.dark .admin-panel{background:#1A1612}
+  body.dark .score-widget,body.dark .quiz-builder,body.dark .quiz-question-card{background:#252018}
+  body.dark .chat-msg.bot{background:#2A2420}
+  body.dark #chat-window,body.dark #chat-hint{background:#252018;color:var(--ink)}
+  body.dark .modal-overlay{background:rgba(0,0,0,0.75)}
+  body.dark #loading-overlay{background:rgba(26,22,18,0.9)}
+  body.dark .profile-section,body.dark .teacher-dash-section{background:#1A1612}
+  body.dark .book-preview-cover-ph,body.dark .result-cover-placeholder{background:#2A2420}
+  body.dark .badge-card{background:#252018}
+  body.dark .waitlist-banner,body.dark #waitlist-banner{background:linear-gradient(135deg,#1a2e20,#1e3525)}
+  /* Toggle button */
+  #dark-toggle{background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .2s;color:var(--gold)}
+  #dark-toggle:hover{background:rgba(196,154,60,0.15)}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Poppins',sans-serif;background:var(--cream);min-height:100vh;color:var(--ink);overflow-x:hidden}
   body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse at 20% 50%,rgba(196,154,60,0.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(92,61,46,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
@@ -478,6 +542,137 @@
   #chat-input{flex:1;padding:8px 12px;border:2px solid var(--warm);border-radius:20px;font-size:.85rem;font-family:'Poppins',sans-serif;outline:none}
   #chat-input:focus{border-color:var(--gold)}
   #chat-send{background:var(--brown);color:var(--gold-light);border:none;border-radius:50%;width:34px;height:34px;font-size:1rem;cursor:pointer;flex-shrink:0}
+  /* ── Quiz/Form ── */
+  .quiz-builder{background:white;border-radius:14px;padding:1.4rem;box-shadow:var(--shadow);margin-bottom:1rem}
+  .quiz-question-card{background:var(--cream);border-radius:10px;padding:1rem;margin-bottom:.8rem;border:1px solid var(--warm)}
+  .quiz-question-card .qq-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+  .quiz-option-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem}
+  .quiz-option-row input[type=text]{flex:1;padding:6px 10px;border:1px solid var(--warm);border-radius:6px;font-family:'Poppins',sans-serif;font-size:.85rem}
+  .quiz-option-row input[type=checkbox]{accent-color:var(--green)}
+  .btn-add-question{background:var(--warm);color:var(--brown);border:none;border-radius:8px;padding:8px 16px;font-family:'Poppins',sans-serif;font-size:.85rem;cursor:pointer;margin-top:.4rem}
+  .btn-add-question:hover{background:#ddd5c4}
+  .quiz-status-badge{padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
+  .quiz-status-draft{background:#f0f0f0;color:#666}
+  .quiz-status-active{background:#EAF5EE;color:var(--green)}
+  .quiz-status-closed{background:#FDECEA;color:var(--red)}
+  /* Studente quiz */
+  .modal-overlay.quiz-overlay{background:rgba(26,18,8,.7)}
+  .quiz-modal{background:white;border-radius:20px;width:min(96vw,640px);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3);animation:modalIn .25s cubic-bezier(.34,1.56,.64,1)}
+  .quiz-modal-header{background:var(--brown);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .quiz-modal-header h3{margin:0;font-size:1.05rem;font-family:'Poppins',sans-serif}
+  .quiz-modal-header .x-btn{background:none;border:none;color:white;font-size:1.3rem;cursor:pointer;line-height:1}
+  .quiz-progress{height:4px;background:var(--warm);flex-shrink:0}
+  .quiz-progress-bar{height:100%;background:var(--gold);transition:width .3s}
+  .quiz-timer{background:#FDECEA;color:var(--red);padding:6px 14px;font-weight:700;font-size:.88rem;text-align:center;flex-shrink:0;display:none}
+  .quiz-timer.show{display:block}
+  .quiz-body{flex:1;overflow-y:auto;padding:20px}
+  .quiz-question-block{margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--warm)}
+  .quiz-question-block:last-child{border-bottom:none}
+  .quiz-q-text{font-weight:600;color:var(--ink);font-size:.95rem;margin-bottom:.6rem}
+  .quiz-q-required{color:var(--red);margin-left:3px}
+  .quiz-input-short{width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.9rem;outline:none}
+  .quiz-input-short:focus{border-color:var(--gold)}
+  .quiz-input-long{width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.9rem;outline:none;resize:vertical;min-height:80px}
+  .quiz-input-long:focus{border-color:var(--gold)}
+  .quiz-option-choice{display:flex;align-items:center;gap:.6rem;padding:8px 12px;border:2px solid var(--warm);border-radius:8px;margin-bottom:.4rem;cursor:pointer;transition:border-color .15s}
+  .quiz-option-choice:hover{border-color:var(--gold-light)}
+  .quiz-option-choice.selected{border-color:var(--brown);background:var(--cream)}
+  .quiz-footer{padding:14px 20px;border-top:1px solid var(--warm);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .quiz-nav-btn{background:var(--warm);color:var(--brown);border:none;border-radius:8px;padding:9px 18px;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer}
+  .quiz-submit-btn{background:var(--green);color:white;border:none;border-radius:8px;padding:9px 20px;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer}
+  /* Rimuove btn-cancel dai modal, aggiunge X universale */
+  .modal-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--brown-light);line-height:1}
+  .modal-x:hover{color:var(--brown)}
+  .modal{position:relative}
+  /* ── Mappa biblioteca ── */
+  .map-editor-wrap{background:var(--cream);border-radius:14px;padding:1.2rem;margin-bottom:1rem}
+  .map-grid{display:inline-grid;gap:4px;background:var(--warm);padding:6px;border-radius:10px;cursor:crosshair}
+  .map-cell{width:52px;height:44px;background:white;border-radius:6px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:.7rem;font-weight:700;cursor:pointer;
+    transition:all .15s;border:2px solid transparent;user-select:none;position:relative}
+  .map-cell:hover{border-color:var(--gold);background:var(--cream)}
+  .map-cell.has-shelf{color:white;border:none}
+  .map-cell.has-shelf:hover{filter:brightness(1.1)}
+  .map-cell.highlighted{box-shadow:0 0 0 3px var(--gold),0 0 12px rgba(196,154,60,.5);z-index:2}
+  .map-cell .shelf-label{font-size:.65rem;opacity:.85;margin-top:1px}
+  .map-tools{display:flex;gap:.5rem;align-items:center;margin-bottom:.8rem;flex-wrap:wrap}
+  .map-tool-btn{padding:6px 14px;border-radius:8px;border:2px solid var(--warm);background:white;
+    font-family:'Poppins',sans-serif;font-size:.82rem;cursor:pointer;font-weight:600;color:var(--brown)}
+  .map-tool-btn.active{background:var(--brown);color:white;border-color:var(--brown)}
+  .map-tool-btn:hover:not(.active){background:var(--cream)}
+  .map-legend{display:flex;gap:.8rem;flex-wrap:wrap;font-size:.75rem;margin-top:.6rem}
+  .map-legend-item{display:flex;align-items:center;gap:.3rem}
+  .map-legend-dot{width:14px;height:14px;border-radius:4px}
+  /* Modal mappa studente */
+  .student-map-wrap{background:var(--cream);border-radius:12px;padding:12px;text-align:center;margin-bottom:1rem}
+  .student-map-grid{display:inline-grid;gap:3px;background:var(--warm);padding:5px;border-radius:8px}
+  .student-map-cell{width:44px;height:36px;background:white;border-radius:5px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:white}
+  .student-map-cell.empty{background:white}
+  .student-map-cell.highlighted{box-shadow:0 0 0 3px var(--gold);animation:mapPulse 1.5s ease infinite}
+  @keyframes mapPulse{0%,100%{box-shadow:0 0 0 3px var(--gold)}50%{box-shadow:0 0 0 6px rgba(196,154,60,.4)}}
+</style>
+  .loans-cal-wrap{margin-bottom:1.2rem}
+  .loans-cal-toggle{display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center}
+  .loans-cal-toggle .cal-view-btn{background:var(--warm);color:var(--brown);border:none;border-radius:8px;
+    padding:7px 16px;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s}
+  .loans-cal-toggle .cal-view-btn.active{background:var(--brown);color:white}
+  .loans-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:1rem}
+  .loans-day-hdr{text-align:center;font-size:.7rem;font-weight:700;color:var(--brown-light);padding:4px 0;text-transform:uppercase}
+  .loans-day-cell{min-height:54px;background:var(--cream);border-radius:8px;padding:4px;font-size:.72rem;cursor:default;border:1px solid transparent;transition:border .15s}
+  .loans-day-cell:hover{border-color:var(--gold)}
+  .loans-day-cell.today{border:2px solid var(--gold)}
+  .loans-day-cell.other-month{opacity:.35}
+  .loans-day-num{font-weight:700;color:var(--brown-light);font-size:.7rem;margin-bottom:2px}
+  .loans-dot{border-radius:4px;padding:1px 4px;margin-bottom:1px;font-size:.65rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  .loans-dot.green{background:#D4EDDA;color:#2E6B45}
+  .loans-dot.orange{background:#FFF3DC;color:#8B5E00}
+  .loans-dot.red{background:#FDECEA;color:#A63228}
+  /* Vista settimanale */
+  .loans-week-grid{display:grid;grid-template-columns:80px repeat(7,1fr);gap:2px;font-size:.78rem}
+  .loans-week-hdr{font-weight:700;color:var(--brown-light);text-align:center;padding:6px 4px;font-size:.72rem}
+  .loans-week-row{display:contents}
+  .loans-week-label{display:flex;align-items:center;font-size:.75rem;color:var(--brown-light);font-weight:600;padding:4px}
+  .loans-week-cell{background:var(--cream);border-radius:6px;padding:4px;min-height:40px}
+</style>
+  .cal-wrap{user-select:none}
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+  .cal-nav{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--brown);padding:4px 8px;border-radius:6px}
+  .cal-nav:hover{background:var(--warm)}
+  .cal-month{font-weight:700;color:var(--brown);font-size:.95rem}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-day-name{text-align:center;font-size:.72rem;font-weight:700;color:var(--brown-light);padding:4px 0;text-transform:uppercase}
+  .cal-day{text-align:center;padding:6px 2px;border-radius:8px;font-size:.85rem;cursor:pointer;transition:background .15s;color:var(--ink)}
+  .cal-day:hover:not(.disabled):not(.empty){background:var(--warm)}
+  .cal-day.selected{background:var(--brown);color:white;font-weight:700}
+  .cal-day.today{border:2px solid var(--gold)}
+  .cal-day.disabled{color:#ccc;cursor:default}
+  .cal-day.empty{cursor:default}
+  .cal-day.reserved{background:#FDECEA;color:var(--red);cursor:not-allowed}
+  body.dark .cal-day{color:var(--ink)}
+  body.dark .cal-day.disabled{color:#444}
+</style>
+  .autocomplete-wrap{position:relative}
+  .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--gold);
+    border-radius:0 0 10px 10px;z-index:500;max-height:280px;overflow-y:auto;box-shadow:var(--shadow-lg);display:none}
+  .autocomplete-dropdown.open{display:block}
+  .ac-item{display:flex;gap:.7rem;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--warm);transition:background .15s}
+  .ac-item:last-child{border-bottom:none}
+  .ac-item:hover{background:var(--cream)}
+  .ac-item img{width:32px;height:44px;object-fit:cover;border-radius:3px;flex-shrink:0}
+  .ac-item-no-cover{width:32px;height:44px;background:var(--warm);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+  .ac-title{font-weight:600;font-size:.85rem;color:var(--ink)}
+  .ac-author{font-size:.78rem;color:var(--brown-light)}
+  body.dark .autocomplete-dropdown{background:#252018;border-color:var(--gold)}
+  body.dark .ac-item:hover{background:#2A2420}
+  body.dark .ac-title{color:#F5EFE6}
+</style>
+  .tc-tab{background:none;border:none;color:rgba(255,255,255,0.65);font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:600;padding:10px 22px;cursor:pointer;border-radius:10px 10px 0 0;transition:all .2s;white-space:nowrap}
+  .tc-tab:hover{color:white;background:rgba(255,255,255,0.1)}
+  .tc-tab.active{background:var(--cream);color:var(--brown);border-radius:10px 10px 0 0}
+  body.dark .tc-tab.active{background:#1A1612;color:var(--brown)}
+  .tc-tab-content{animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -500,6 +695,9 @@
   <div id="student-notif-bell" class="notif-bell" onclick="openStudentNotifications()" style="display:none">
     🔔<span class="notif-badge" id="student-notif-badge" style="display:none">0</span>
   </div>
+  <button id="dark-toggle" onclick="toggleDarkMode()" title="Modalità scuro/chiaro">🌙</button>
+  <button id="acc-toggle-dyslexic" onclick="toggleDyslexic()" title="Font per dislessia (OpenDyslexic)">𝐃</button>
+  <button id="acc-toggle-large" onclick="toggleLargeText()" title="Testo grande">🔡</button>
 </header>
 
 <!-- LOGIN -->
@@ -560,6 +758,13 @@
     <input type="text" id="search-input" placeholder="Cerca titolo o autore..." oninput="onSearch()" autocomplete="off"/>
     <button class="btn-scan-inline" onclick="scanIsbnForTake()" title="Scansiona ISBN" type="button">📷</button>
   </div>
+  <div style="margin-top:.5rem;width:100%;max-width:480px">
+    <input type="text" id="student-location-filter" placeholder="📍 Filtra per posizione (es. 6.L)"
+           oninput="onSearch()" autocomplete="off"
+           style="width:100%;padding:9px 14px;border:2px solid var(--warm);border-radius:10px;
+                  font-size:.88rem;font-family:'Poppins',sans-serif;outline:none;box-sizing:border-box"
+           onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--warm)'"/>
+  </div>
 
   <div id="category-nav">
     <div class="category-row" id="category-buttons"></div>
@@ -597,6 +802,55 @@
   <div id="return-content"></div>
 </section>
 
+<!-- MODAL: Prenotazione anticipata -->
+<div class="modal-overlay" id="modal-reservation">
+  <div class="modal" style="max-width:400px">
+    <h3>📅 Prenota per una data</h3>
+    <p id="res-book-title" style="font-weight:600;color:var(--brown);font-size:.95rem;margin-bottom:.3rem"></p>
+    <p style="font-size:.82rem;color:var(--brown-light);margin-bottom:1rem">
+      Scegli la data in cui vieni a ritirarlo. Il libro sarà riservato solo per te.
+    </p>
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calPrev()">‹</button>
+        <span class="cal-month" id="cal-month-label"></span>
+        <button class="cal-nav" onclick="calNext()">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div id="cal-selected-date" style="margin-top:.8rem;font-size:.88rem;color:var(--brown);
+         font-weight:600;min-height:1.4rem;text-align:center"></div>
+    <div class="modal-buttons" style="margin-top:.8rem">
+      <button class="btn-cancel" onclick="closeModal('modal-reservation')">Annulla</button>
+      <button class="btn-confirm" id="res-confirm-btn" onclick="confirmReservation()" disabled
+              style="opacity:.5">📅 Conferma prenotazione</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Passa il libro a un compagno -->
+<div class="modal-overlay" id="modal-pass-book">
+  <div class="modal" style="max-width:420px">
+    <h3>📚 Passa il libro a un compagno</h3>
+    <p style="font-size:.88rem;color:var(--brown-light);margin-bottom:1rem">
+      Vuoi consigliare <strong id="pass-book-title"></strong> a un compagno?
+      Riceverà una notifica con il tuo consiglio.
+    </p>
+    <div class="input-group">
+      <label>Cerca compagno</label>
+      <input type="text" id="pass-search-input" placeholder="Scrivi nome o cognome…"
+             oninput="filterPassStudents()" autocomplete="off"
+             style="width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;
+                    font-family:'Poppins',sans-serif;font-size:.9rem"/>
+    </div>
+    <div id="pass-students-list" style="max-height:200px;overflow-y:auto;margin-top:.5rem;
+         border:1px solid var(--warm);border-radius:10px"></div>
+    <div class="modal-buttons" style="margin-top:1rem">
+      <button class="btn-cancel" onclick="closeModal('modal-pass-book')">Salta</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <section class="screen" id="screen-admin">
   <div class="admin-container">
@@ -625,6 +879,8 @@
       <button class="tab-btn" onclick="switchTab('classes')">🏫 Classi <span class="tab-badge" id="badge-classes"></span></button>
       <button class="tab-btn" onclick="switchTab('teachers')">🧑‍🏫 Professori <span class="tab-badge" id="badge-teachers"></span></button>
       <button class="tab-btn" onclick="switchTab('messages')">📢 Messaggi</button>
+      <button class="tab-btn" onclick="switchTab('logs')">📋 Log accessi</button>
+      <button class="tab-btn" onclick="switchTab('map')">🗺️ Mappa</button>
     </div>
     <!-- TAB BOOKS -->
     <div class="tab-content active" id="tab-books">
@@ -633,25 +889,17 @@
           <div style="flex:1;min-width:180px"><label>ISBN</label><input type="text" id="a-isbn" placeholder="Es. 9788804668237" inputmode="numeric"/></div>
           <button class="btn-add" type="button" onclick="scanIsbnForAddBook()">📷 Scansiona ISBN</button>
         </div>
-        <div><label>Titolo *</label><input type="text" id="a-title" placeholder="Titolo del libro"/></div>
+        <div class="autocomplete-wrap">
+          <label>Titolo *</label>
+          <input type="text" id="a-title" placeholder="Titolo del libro" autocomplete="off"
+                 oninput="onBookTitleInput(this.value)"
+                 onblur="setTimeout(()=>closeAcDropdown(),200)"/>
+          <div class="autocomplete-dropdown" id="ac-dropdown"></div>
+        </div>
         <div><label>Autore *</label><input type="text" id="a-author" placeholder="Cognome Nome"/></div>
         <div><label>Editore</label><input type="text" id="a-publisher" placeholder="Casa editrice"/></div>
         <div><label>Posizione *</label><input type="text" id="a-location" placeholder="Es. 6.L"/></div>
         <div class="span2"><label>Genere letterario</label><input type="text" id="a-genre" placeholder="Es. romanzo storico / avventura"/></div>
-        <div><label>Lingua</label>
-          <select id="a-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-size:.9rem;font-family:'Poppins',sans-serif;outline:none;">
-            <option value="it" selected>🇮🇹 Italiano</option>
-            <option value="en">🇬🇧 Inglese</option>
-            <option value="fr">🇫🇷 Francese</option>
-            <option value="de">🇩🇪 Tedesco</option>
-            <option value="es">🇪🇸 Spagnolo</option>
-            <option value="pt">🇵🇹 Portoghese</option>
-            <option value="ar">🇸🇦 Arabo</option>
-            <option value="zh">🇨🇳 Cinese</option>
-            <option value="ja">🇯🇵 Giapponese</option>
-            <option value="ru">🇷🇺 Russo</option>
-          </select>
-        </div>
         <div class="full"><button class="btn-add" onclick="addBook()">+ Aggiungi libro</button></div>
       </div>
       <div style="margin-bottom:.8rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
@@ -677,7 +925,11 @@
         </div>
       </div>
       <div class="admin-search-row">
-        <input type="text" id="admin-search" placeholder="Filtra per titolo, autore, posizione..." oninput="renderBooksTable()"/>
+        <input type="text" id="admin-search" placeholder="Filtra per titolo, autore..." oninput="renderBooksTable()"/>
+        <input type="text" id="admin-location-filter" placeholder="📍 Posizione (es. 6.L)" oninput="renderBooksTable()"
+               style="max-width:160px;padding:10px 14px;border:2px solid var(--warm);border-radius:10px;
+                      font-size:.9rem;font-family:'Poppins',sans-serif;outline:none;transition:border-color .2s"
+               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--warm)'"/>
         <span class="admin-count" id="admin-count"></span>
       </div>
       <div class="books-table">
@@ -697,6 +949,20 @@
     </div>
     <!-- TAB LOANS -->
     <div class="tab-content" id="tab-loans">
+      <div class="loans-cal-wrap">
+        <div class="loans-cal-toggle">
+          <span style="font-size:.85rem;font-weight:600;color:var(--brown)">Vista:</span>
+          <button class="cal-view-btn active" id="cal-btn-month" onclick="setLoansCalView('month')">📅 Mensile</button>
+          <button class="cal-view-btn" id="cal-btn-week" onclick="setLoansCalView('week')">📋 Settimanale</button>
+          <button class="cal-view-btn" id="cal-btn-list" onclick="setLoansCalView('list')">📄 Lista</button>
+          <div style="margin-left:auto;display:flex;gap:.3rem">
+            <button class="cal-nav" onclick="loansCalPrev()">‹</button>
+            <span id="loans-cal-label" style="font-size:.85rem;font-weight:700;color:var(--brown);min-width:140px;text-align:center;padding:0 4px"></span>
+            <button class="cal-nav" onclick="loansCalNext()">›</button>
+          </div>
+        </div>
+        <div id="loans-cal-body"></div>
+      </div>
       <div class="loans-list" id="loans-list"></div>
     </div>
     <!-- TAB HISTORY -->
@@ -725,6 +991,23 @@
           <div class="po-icon">⚠️</div><div><div class="po-title">Prestiti scaduti</div><div class="po-desc">Solo i libri che avrebbero dovuto essere restituiti.</div></div>
           <button class="btn-pdf btn-pdf-red">Genera PDF</button>
         </div>
+        <!-- ETICHETTE SCAFFALE -->
+        <div style="width:100%;border-top:2px solid var(--warm);padding-top:1.2rem;margin-top:.4rem">
+          <div style="font-weight:700;color:var(--brown);font-size:.95rem;margin-bottom:.6rem">🏷️ Etichette scaffale</div>
+          <div style="font-size:.82rem;color:var(--brown-light);margin-bottom:.8rem">Etichette 48×25mm, 4 per riga su A4. Posizione + codice a barre ISBN.</div>
+        </div>
+        <div class="pdf-option-card" onclick="exportLabels('all')">
+          <div class="po-icon">🏷️</div><div><div class="po-title">Tutto il catalogo</div><div class="po-desc">Un'etichetta per ogni libro nel catalogo.</div></div>
+          <button class="btn-pdf">Genera PDF</button>
+        </div>
+        <div class="pdf-option-card" onclick="exportLabels('filtered')">
+          <div class="po-icon">🔍</div><div><div class="po-title">Solo libri filtrati</div><div class="po-desc">Usa il filtro ricerca nella tab Libri per selezionare un sottoinsieme.</div></div>
+          <button class="btn-pdf">Genera PDF</button>
+        </div>
+        <div class="pdf-option-card" onclick="exportLabels('noisbn')">
+          <div class="po-icon">📦</div><div><div class="po-title">Solo senza ISBN</div><div class="po-desc">Libri del vecchio catalogo non ancora scansionati.</div></div>
+          <button class="btn-pdf">Genera PDF</button>
+        </div>
       </div>
     </div>
     <!-- TAB BACKUP -->
@@ -744,6 +1027,14 @@
             <input type="file" accept=".json" onchange="importBackup(this.files[0])"/>
             <p>📂 Clicca o trascina il file .json di backup</p>
           </div>
+        </div>
+        <div class="backup-card">
+          <div class="bc-icon">📅</div>
+          <div>
+            <div class="bc-title">Cambio anno scolastico</div>
+            <div class="bc-desc">Azzera punteggi e badge. Promuove le classi (1→2, 2→3). Le classi al 3° anno vengono eliminate dopo conferma. Gli studenti senza classe rimangono attivi.</div>
+          </div>
+          <button class="btn-backup" style="background:var(--brown)" onclick="openYearChange()">🎓 Nuovo anno</button>
         </div>
         <div class="backup-card">
           <div class="bc-icon">🗑️</div>
@@ -833,6 +1124,10 @@
         <button class="btn-sel-all" onclick="toggleSelectAll()">Seleziona tutti</button>
         <button class="btn-print-sel" id="btn-print-sel" onclick="printSelectedLetters()">🖨 Stampa lettere selezionate (<span id="sel-count">0</span>)</button>
         <button class="btn-print-sel" onclick="exportStudentsCSV()">📊 Esporta CSV (con PIN)</button>
+        <button class="btn-sel-all" onclick="document.getElementById('csv-import-input').click()"
+                style="background:var(--green);color:white">📥 Importa da CSV</button>
+        <input type="file" id="csv-import-input" accept=".csv" style="display:none"
+               onchange="importStudentsCSV(this.files[0]);this.value=''"/>
         <span class="sel-count" id="sel-info"></span>
       </div>
       <div class="admin-search-row">
@@ -940,6 +1235,68 @@
         <p id="bc-result" style="font-size:.85rem;color:var(--brown-light);margin-top:.8rem"></p>
       </div>
     </div>
+
+    <!-- TAB MAPPA -->
+    <div class="tab-content" id="tab-map">
+      <div class="settings-panel">
+        <h3>🗺️ Mappa biblioteca</h3>
+        <p style="font-size:.85rem;color:var(--brown-light);margin-bottom:1rem">
+          Clicca su una cella per aggiungere uno scaffale. Ogni scaffale corrisponde a un codice di posizione (es. "6", "A", "12").
+          Gli studenti vedranno la mappa con lo scaffale del loro libro evidenziato.
+        </p>
+        <div class="map-tools">
+          <span style="font-size:.85rem;font-weight:600;color:var(--brown)">Strumento:</span>
+          <button class="map-tool-btn active" id="map-tool-add" onclick="setMapTool('add')">➕ Aggiungi scaffale</button>
+          <button class="map-tool-btn" id="map-tool-erase" onclick="setMapTool('erase')">🗑 Cancella</button>
+          <span style="font-size:.85rem;font-weight:600;color:var(--brown);margin-left:.5rem">Griglia:</span>
+          <select id="map-cols-select" onchange="resizeMapGrid()" style="padding:6px 10px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.82rem">
+            <option value="6">6 colonne</option>
+            <option value="8" selected>8 colonne</option>
+            <option value="10">10 colonne</option>
+            <option value="12">12 colonne</option>
+          </select>
+          <select id="map-rows-select" onchange="resizeMapGrid()" style="padding:6px 10px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.82rem">
+            <option value="4">4 righe</option>
+            <option value="6" selected>6 righe</option>
+            <option value="8">8 righe</option>
+          </select>
+          <button class="map-tool-btn" onclick="saveLibraryMap()" style="background:var(--green);color:white;border-color:var(--green);margin-left:auto">💾 Salva mappa</button>
+        </div>
+        <div id="map-editor" class="map-editor-wrap">
+          <div id="map-grid-container"></div>
+        </div>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#5C3D2E"></div> Scaffale</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:white;border:1px solid #ccc"></div> Spazio vuoto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB LOG ACCESSI -->
+    <div class="tab-content" id="tab-logs">
+      <div class="settings-panel">
+        <h3>📋 Log accessi</h3>
+        <div style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+          <select id="log-type-filter" onchange="loadAccessLogs()"
+                  style="padding:8px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.88rem">
+            <option value="">Tutti gli utenti</option>
+            <option value="admin">Solo admin</option>
+            <option value="teacher">Solo professori</option>
+            <option value="student">Solo studenti</option>
+          </select>
+          <select id="log-days-filter" onchange="loadAccessLogs()"
+                  style="padding:8px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.88rem">
+            <option value="1">Ultime 24 ore</option>
+            <option value="7" selected>Ultimi 7 giorni</option>
+            <option value="30">Ultimi 30 giorni</option>
+          </select>
+          <button class="btn-add" onclick="loadAccessLogs()" style="font-size:.85rem;padding:8px 16px">🔄 Aggiorna</button>
+        </div>
+        <div id="logs-table-wrap" style="overflow-x:auto">
+          <div style="color:var(--brown-light);font-size:.9rem">Seleziona un filtro e premi Aggiorna.</div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1001,48 +1358,137 @@
   </div>
 
   <div class="teacher-dash-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem">
+      <h3 class="profile-section-title" style="margin:0">📅 Calendario scadenze</h3>
+      <div style="display:flex;gap:.3rem">
+        <button class="cal-view-btn active" id="tcal-btn-month" onclick="setTeacherCalView('month')" style="font-size:.78rem;padding:5px 12px">Mensile</button>
+        <button class="cal-view-btn" id="tcal-btn-week" onclick="setTeacherCalView('week')" style="font-size:.78rem;padding:5px 12px">Settimanale</button>
+        <button class="cal-nav" onclick="teacherCalPrev()">‹</button>
+        <span id="teacher-cal-label" style="font-size:.82rem;font-weight:700;color:var(--brown);padding:0 4px;line-height:2"></span>
+        <button class="cal-nav" onclick="teacherCalNext()">›</button>
+      </div>
+    </div>
+    <div id="teacher-cal-body"></div>
+  </div>
+
+  <div class="teacher-dash-section">
     <h3 class="profile-section-title">⏳ Alunni in ritardo</h3>
     <div id="teacher-overdue-list"></div>
+  </div>
+
+  <div class="teacher-dash-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+      <h3 class="profile-section-title" style="margin:0">📝 Quiz e Form</h3>
+      <button class="btn-add" onclick="openQuizBuilder()" style="font-size:.85rem;padding:8px 16px">+ Crea nuovo</button>
+    </div>
+    <div id="teacher-quiz-list"></div>
   </div>
 </section>
 
 <!-- MODAL: elenco classe (alunni, punteggi, prestiti) -->
-<div class="modal-overlay" id="modal-teacher-class">
-  <div class="modal modal-profile-large">
-    <h3 id="modal-teacher-class-title">🏫 Classe</h3>
+<!-- MODAL: Quiz Builder (professore) -->
+<div class="modal-overlay" id="modal-quiz-builder">
+  <div class="modal modal-profile-large" style="max-width:640px">
+    <button class="modal-x" onclick="closeModal('modal-quiz-builder')">✕</button>
+    <h3 id="quiz-builder-title">📝 Crea Quiz / Form</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+      <div class="full" style="grid-column:1/-1">
+        <label style="font-size:.78rem;font-weight:600;color:var(--brown);text-transform:uppercase">Tipo</label>
+        <div style="display:flex;gap:.5rem;margin-top:.3rem">
+          <button id="qb-type-form" class="btn-confirm" onclick="setQuizType('form')" style="flex:1">📋 Form</button>
+          <button id="qb-type-quiz" class="btn-cancel" onclick="setQuizType('quiz')" style="flex:1">🎯 Quiz</button>
+        </div>
+      </div>
+      <div style="grid-column:1/-1"><label style="font-size:.78rem;font-weight:600;color:var(--brown);text-transform:uppercase">Titolo *</label>
+        <input type="text" id="qb-title" placeholder="Es. Verifica di lettura" style="width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;margin-top:.3rem"/>
+      </div>
+      <div style="grid-column:1/-1"><label style="font-size:.78rem;font-weight:600;color:var(--brown);text-transform:uppercase">Sottotitolo</label>
+        <input type="text" id="qb-subtitle" placeholder="Opzionale" style="width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;margin-top:.3rem"/>
+      </div>
+      <div><label style="font-size:.78rem;font-weight:600;color:var(--brown);text-transform:uppercase">Timer (minuti)</label>
+        <input type="number" id="qb-timer" min="1" max="180" placeholder="Nessun limite" style="width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;margin-top:.3rem"/>
+      </div>
+      <div><label style="font-size:.78rem;font-weight:600;color:var(--brown);text-transform:uppercase">Assegna a classe</label>
+        <select id="qb-class" style="width:100%;padding:9px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;margin-top:.3rem">
+          <option value="">— Tutte le classi mie —</option>
+        </select>
+      </div>
+    </div>
+    <div class="profile-divider"></div>
+    <h4 class="profile-section-title">Domande</h4>
+    <div id="qb-questions"></div>
+    <button class="btn-add-question" onclick="addQuizQuestion()">+ Aggiungi domanda</button>
+    <div class="modal-buttons" style="margin-top:1rem">
+      <button class="btn-cancel" onclick="saveQuizDraft()">💾 Salva bozza</button>
+      <button class="btn-confirm" onclick="saveAndActivateQuiz()">✅ Attiva subito</button>
+    </div>
+  </div>
+</div>
 
-    <div class="profile-section">
-      <h4 class="profile-section-title">📖 Consiglio di lettura per questa classe</h4>
-      <div id="teacher-recommendation-current"></div>
-      <div class="teacher-rec-form">
-        <select id="rec-category-select" onchange="updateRecSubcategories()">
-          <option value="">— Scegli una categoria —</option>
-        </select>
-        <select id="rec-subcategory-select">
-          <option value="">(tutte le sottocategorie)</option>
-        </select>
-        <input type="text" id="rec-note-input" placeholder="Messaggio facoltativo per gli alunni"/>
-        <button class="btn-add" onclick="saveClassRecommendation()">💾 Salva consiglio</button>
-        <button class="btn-cancel" id="btn-remove-rec" style="display:none" onclick="removeClassRecommendation()">🗑 Rimuovi</button>
+<!-- MODAL: Compilazione quiz (studente) -->
+<div class="modal-overlay quiz-overlay" id="modal-quiz-student" style="display:none;align-items:center;justify-content:center">
+  <div class="quiz-modal">
+    <div class="quiz-modal-header">
+      <div>
+        <h3 id="qs-title">Quiz</h3>
+        <div id="qs-subtitle" style="font-size:.8rem;opacity:.8"></div>
+      </div>
+      <button class="x-btn" onclick="confirmCloseQuiz()">✕</button>
+    </div>
+    <div class="quiz-progress"><div class="quiz-progress-bar" id="qs-progress-bar" style="width:0%"></div></div>
+    <div class="quiz-timer" id="qs-timer">⏱ 00:00</div>
+    <div class="quiz-body" id="qs-body"></div>
+    <div class="quiz-footer">
+      <span id="qs-counter" style="font-size:.82rem;color:var(--brown-light)"></span>
+      <button class="quiz-submit-btn" id="qs-submit-btn" onclick="submitQuiz(false)">✓ Invia risposte</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-teacher-class">
+  <div class="modal" style="max-width:720px;width:96vw;padding:0;overflow:hidden;border-radius:20px">
+    <button class="modal-x" onclick="closeModal('modal-teacher-class')" style="top:16px;right:18px;z-index:10">✕</button>
+
+    <!-- Header -->
+    <div style="background:var(--brown);padding:20px 28px 0;color:white">
+      <h3 id="modal-teacher-class-title" style="font-family:'Poppins',sans-serif;font-size:1.15rem;margin-bottom:14px;color:var(--gold-light)">🏫 Classe</h3>
+      <!-- Tab orizzontali -->
+      <div style="display:flex;gap:0;border-bottom:none">
+        <button class="tc-tab active" data-tab="students" onclick="switchClassTab('students',this)">👥 Alunni</button>
+        <button class="tc-tab" data-tab="stats" onclick="switchClassTab('stats',this)">📊 Statistiche</button>
+        <button class="tc-tab" data-tab="rec" onclick="switchClassTab('rec',this)">📖 Consiglio</button>
       </div>
     </div>
 
-    <div class="profile-divider"></div>
+    <!-- Corpo tab -->
+    <div style="padding:24px 28px;overflow-y:auto;max-height:65vh">
 
-    <div class="profile-section">
-      <h4 class="profile-section-title">📊 Statistiche di lettura</h4>
-      <div id="teacher-class-stats"></div>
-    </div>
+      <!-- TAB: Alunni -->
+      <div id="tc-tab-students" class="tc-tab-content">
+        <div id="teacher-class-students-list"></div>
+      </div>
 
-    <div class="profile-divider"></div>
+      <!-- TAB: Statistiche -->
+      <div id="tc-tab-stats" class="tc-tab-content" style="display:none">
+        <div id="teacher-class-stats"></div>
+      </div>
 
-    <div class="profile-section">
-      <h4 class="profile-section-title">👥 Alunni (ordine alfabetico)</h4>
-      <div id="teacher-class-students-list"></div>
-    </div>
+      <!-- TAB: Consiglio di lettura -->
+      <div id="tc-tab-rec" class="tc-tab-content" style="display:none">
+        <div id="teacher-recommendation-current" style="margin-bottom:1rem"></div>
+        <div class="teacher-rec-form">
+          <select id="rec-category-select" onchange="updateRecSubcategories()">
+            <option value="">— Scegli una categoria —</option>
+          </select>
+          <select id="rec-subcategory-select">
+            <option value="">(tutte le sottocategorie)</option>
+          </select>
+          <input type="text" id="rec-note-input" placeholder="Messaggio facoltativo per gli alunni"/>
+          <button class="btn-add" onclick="saveClassRecommendation()">💾 Salva consiglio</button>
+          <button class="btn-cancel" id="btn-remove-rec" style="display:none" onclick="removeClassRecommendation()">🗑 Rimuovi</button>
+        </div>
+      </div>
 
-    <div class="modal-buttons" style="margin-top:1rem">
-      <button class="btn-cancel" onclick="closeModal('modal-teacher-class')">Chiudi</button>
     </div>
   </div>
 </div>
@@ -1104,6 +1550,22 @@
         <div id="bp-genre" style="color:var(--brown-light);font-size:.85rem;margin-bottom:8px"></div>
         <div id="bp-availability" style="font-weight:600;font-size:.9rem;margin-bottom:8px"></div>
         <div id="bp-rating" style="font-size:.92rem;color:var(--brown)"></div>
+      </div>
+    </div>
+    <div id="bp-synopsis" style="display:none;font-size:.85rem;color:var(--ink);line-height:1.6;
+         background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:1rem;
+         border-left:3px solid var(--gold)"></div>
+    <div id="bp-similar" style="display:none;margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;
+                  letter-spacing:.5px;margin-bottom:.5rem">📚 Potrebbe piacerti anche</div>
+      <div id="bp-similar-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
+    </div>
+    <div id="bp-map" style="display:none;margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;
+                  letter-spacing:.5px;margin-bottom:.5rem">🗺️ Dove trovarlo</div>
+      <div class="student-map-wrap">
+        <div id="bp-map-grid" class="student-map-grid"></div>
+        <div id="bp-map-label" style="font-size:.8rem;color:var(--brown-light);margin-top:.5rem"></div>
       </div>
     </div>
     <div class="modal-buttons">
@@ -1431,7 +1893,7 @@
       <div><label>Posizione *</label><input type="text" id="e-location"/></div>
       <div><label>Genere</label><input type="text" id="e-genre"/></div>
       <div><label>Lingua</label>
-        <select id="e-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-size:.9rem;font-family:'Poppins',sans-serif;outline:none;">
+        <select id="e-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.9rem">
           <option value="it">🇮🇹 Italiano</option>
           <option value="en">🇬🇧 Inglese</option>
           <option value="fr">🇫🇷 Francese</option>
@@ -1514,6 +1976,88 @@
     </div>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('modal-pin-choice')">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Cambio stato libro -->
+<div class="modal-overlay" id="modal-book-status">
+  <div class="modal" style="max-width:380px">
+    <h3>🔧 Stato libro</h3>
+    <p id="book-status-title" style="font-weight:600;color:var(--brown);margin-bottom:1rem;font-size:.95rem"></p>
+    <div class="input-group">
+      <label>Stato</label>
+      <select id="book-status-select"
+              style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;
+                     font-family:'Poppins',sans-serif;font-size:.9rem">
+        <option value="disponibile">✅ Disponibile</option>
+        <option value="in_riparazione">🔧 In riparazione</option>
+        <option value="smarrito">❌ Smarrito</option>
+      </select>
+    </div>
+    <div style="font-size:.8rem;color:var(--brown-light);margin-top:.4rem;margin-bottom:1rem">
+      I libri "In riparazione" o "Smarrito" restano visibili ma non sono prendibili dagli studenti.
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('modal-book-status')">Annulla</button>
+      <button class="btn-confirm" onclick="saveBookStatus()">✓ Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Risultati import CSV studenti -->
+<div class="modal-overlay" id="modal-csv-import">
+  <div class="modal" style="max-width:520px">
+    <h3>📥 Importazione CSV completata</h3>
+    <div id="csv-import-results" style="font-size:.88rem;line-height:1.8;max-height:300px;overflow-y:auto;
+         background:var(--cream);border-radius:10px;padding:12px 16px;margin-bottom:1rem;text-align:left"></div>
+    <div class="modal-buttons">
+      <button class="btn-confirm" onclick="closeModal('modal-csv-import')">✓ OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Promuovi singola classe -->
+<div class="modal-overlay" id="modal-promote-class">
+  <div class="modal" style="max-width:380px">
+    <h3>⬆️ Promuovi classe</h3>
+    <p style="font-size:.9rem;color:var(--brown-light);margin-bottom:1rem">
+      Cambia il numero della classe <strong id="promote-class-name"></strong>.
+      La lettera rimane invariata.
+    </p>
+    <div class="input-group">
+      <label>Nuovo numero</label>
+      <select id="promote-class-num"
+              style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;
+                     font-family:'Poppins',sans-serif;font-size:.9rem">
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('modal-promote-class')">Annulla</button>
+      <button class="btn-confirm" onclick="confirmPromoteClass()">✓ Promuovi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Cambio anno scolastico -->
+<div class="modal-overlay" id="modal-year-change">
+  <div class="modal modal-del">
+    <div class="modal-icon">🎓</div>
+    <h3>Cambio anno scolastico</h3>
+    <p style="font-size:.9rem;color:var(--brown-light);line-height:1.6;margin-bottom:1rem">
+      Questa operazione:
+      <br>• Azzera punteggi e badge di tutti gli studenti
+      <br>• Promuove le classi: 1→2, 2→3
+      <br>• <strong style="color:var(--red)">Elimina le classi al 3° anno</strong> e i loro studenti rimarranno senza classe
+      <br>• Il catalogo e lo storico prestiti restano invariati
+    </p>
+    <div id="year-change-preview" style="background:var(--cream);border-radius:10px;padding:10px 14px;
+         font-size:.82rem;color:var(--brown);margin-bottom:1rem;text-align:left;line-height:1.8"></div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('modal-year-change')">Annulla</button>
+      <button class="btn-confirm" style="background:var(--brown)" onclick="confirmYearChange()">✓ Confermo, procedi</button>
     </div>
   </div>
 </div>
@@ -1801,6 +2345,8 @@ async function doLogin() {
 
   showScreen('screen-actions');
 
+  // Controlla quiz disponibili
+  checkStudentQuizzes();
   // Controlla se lo studente ha già un'email: se no, mostra il pop-up (una volta per sessione)
   if (!sessionStorage.getItem('email_prompt_shown')) {
     try {
@@ -2164,25 +2710,26 @@ function showInitialBooks() {
   res.style.display = 'block';
   res.innerHTML = sorted.map(b => {
     const taken    = takenIds.includes(b.id);
+    const notAvail = taken || (b.bookStatus && b.bookStatus !== 'disponibile');
     const inQueue  = taken && _waitlist.some(w => w.bookId === b.id && w.user === currentUser);
     const qLen     = taken ? _waitlist.filter(w => w.bookId === b.id).length : 0;
     const inWishlist = _myWishlist.some(w => w.bookId === b.id);
-    const starsBadge = b.averageRating
-      ? `<span style="color:#F5A623;font-size:.78rem;margin-left:5px">★ ${b.averageRating.toFixed(1)}</span>` : '';
-    const langBadge  = b.language && b.language !== 'it'
-      ? `<span style="font-size:.72rem;background:#EDE5D4;color:var(--brown);border-radius:8px;padding:1px 6px;margin-left:4px">${_langFlag(b.language)}</span>` : '';
+    const statusTag = b.bookStatus && b.bookStatus !== 'disponibile'
+      ? ` <span style="font-size:.72rem;color:${b.bookStatus==='smarrito'?'#A63228':'#8B5E00'};font-weight:700">${b.bookStatus==='smarrito'?'❌ Smarrito':'🔧 In riparazione'}</span>`
+      : '';
     const coverEl = `<div class="result-cover-click" onclick="event.stopPropagation();openBookPreview('${b.id}')">` + (b.coverUrl
       ? `<img class="result-cover" src="${b.coverUrl}" alt="" onerror="this.outerHTML='<div class=result-cover-placeholder>📖</div>'" />`
       : `<div class="result-cover-placeholder">📖</div>`) + `</div>`;
-    return `<div class="result-item" ${!taken ? `onclick="openTakeModal('${b.id}')"` : 'style="cursor:default"'}>
+    return `<div class="result-item" ${!notAvail ? `onclick="openTakeModal('${b.id}')"` : 'style="cursor:default"'}>
       ${coverEl}
       <div class="result-body">
-        <div class="result-title">${b.title}${starsBadge}${langBadge}${taken ? ' <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>' : ''}</div>
+        <div class="result-title">${b.title}${notAvail ? ` <span style="color:var(--red);font-size:.8rem;font-weight:600">✗ Non disponibile</span>${statusTag}` : ''}</div>
         <div class="result-meta">${b.author}${b.publisher?' · '+b.publisher:''} &nbsp;·&nbsp; 📍 ${b.location}</div>
         ${b.genre ? `<div class="result-genre">📂 ${b.genre}</div>` : ''}
         <div class="result-actions-row">
           <button class="btn-wishlist ${inWishlist?'active':''}" onclick="toggleWishlist(event,'${b.id}')">${inWishlist ? '💛 Nella tua lista' : '🤍 Da leggere'}</button>
           ${taken ? `<button class="btn-waitlist ${inQueue?'in-queue':''}" onclick="toggleWaitlist(event,'${b.id}')">${inQueue ? "✓ In lista d'attesa" : `🔔 Avvisami${qLen?' ('+qLen+')':''}`}</button>` : ''}
+          ${!notAvail ? `<button class="btn-waitlist" onclick="event.stopPropagation();openReservationModal('${b.id}','${b.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">📅 Prenota</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -2275,14 +2822,16 @@ function onSearch() {
 
 function doSearch() {
   const q   = document.getElementById('search-input').value.toLowerCase().trim();
+  const ql  = (document.getElementById('student-location-filter')?.value||'').toLowerCase().trim();
   const res = document.getElementById('search-results');
 
-  if (!q && !_activeCategory) { showInitialBooks(); return; }
+  if (!q && !ql && !_activeCategory) { showInitialBooks(); return; }
 
   const takenIds = _takenBookIds;
   let matches = _books.filter(b => {
     const textOk = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
-    return textOk;
+    const locOk  = !ql || b.location.toLowerCase().includes(ql);
+    return textOk && locOk;
   });
 
   if (_activeCategory) {
@@ -2494,41 +3043,76 @@ async function openBookPreview(bookId) {
   takeBtn.style.display = taken ? 'none' : '';
 
   const ratingEl = document.getElementById('bp-rating');
-  ratingEl.innerHTML = '<span style="color:var(--brown-light);font-size:.8rem">Caricamento…</span>';
+  ratingEl.textContent = 'Caricamento recensioni…';
+  const synEl = document.getElementById('bp-synopsis');
+  synEl.style.display = 'none';
+  synEl.textContent = '';
   openModal('modal-book-preview');
 
+  // Mostra mappa posizione libro
+  renderBookMap(book.location);
+
+  // Fetch sinossi da Google Books (migliore supporto italiano)
+  if (book.isbn) {
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&langRestrict=it`)
+      .then(r => r.json())
+      .then(data => {
+        const item = data.items?.[0];
+        const desc = item?.volumeInfo?.description;
+        if (desc) {
+          synEl.textContent = desc.length > 400 ? desc.substring(0, 397) + '…' : desc;
+          synEl.style.display = 'block';
+        }
+      })
+      .catch(() => {});
+  }
+
   try {
-    const { averageRating, count, reviews } = await api('GET', `/books/${bookId}/reviews`);
+    const { averageRating, count } = await api('GET', `/books/${bookId}/reviews`);
     if (!count) {
-      ratingEl.innerHTML = '<span style="color:var(--brown-light);font-size:.8rem">Nessuna recensione ancora</span>';
+      ratingEl.textContent = 'Nessuna recensione ancora.';
     } else {
-      const full  = Math.floor(averageRating);
-      const half  = (averageRating - full) >= 0.5;
-      const empty = 5 - full - (half ? 1 : 0);
-      ratingEl.innerHTML =
-        `<span style="color:#F5A623;font-size:1.05rem;letter-spacing:1px">${'★'.repeat(full)}${half?'½':''}<span style="color:#ddd">${'★'.repeat(empty)}</span></span>` +
-        `<span style="font-weight:700;color:var(--brown);margin-left:5px">${averageRating.toFixed(1)}</span>` +
-        `<span style="color:var(--brown-light);font-size:.8rem"> / 5 · ${count} recension${count===1?'e':'i'}</span>`;
-      // Mostra ultime 3 recensioni con testo
-      if (reviews && reviews.length) {
-        const simEl = document.getElementById('bp-similar');
-        const existing = document.getElementById('bp-reviews-section');
-        if (existing) existing.remove();
-        const sec = document.createElement('div');
-        sec.id = 'bp-reviews-section';
-        sec.style.marginBottom = '1rem';
-        sec.innerHTML = `<div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">💬 Recensioni</div>` +
-          reviews.slice(0,3).map(r =>
-            `<div style="background:var(--cream);border-radius:8px;padding:7px 10px;margin-bottom:4px;font-size:.8rem">
-              <span style="color:#F5A623">${'★'.repeat(r.rating)}<span style="color:#ddd">${'★'.repeat(5-r.rating)}</span></span>
-              <span style="color:var(--brown-light);font-size:.72rem;margin-left:4px">${r.studentName}</span>
-              ${r.text ? `<div style="margin-top:3px;color:var(--ink);font-style:italic">"${r.text}"</div>` : ''}
-            </div>`).join('');
-        simEl.parentNode.insertBefore(sec, simEl.nextSibling);
-      }
+      const stars = '⭐'.repeat(Math.round(averageRating)) + '☆'.repeat(5 - Math.round(averageRating));
+      ratingEl.textContent = `${stars} ${averageRating}/5 (${count} recensione${count === 1 ? '' : 'i'})`;
     }
   } catch (e) {
-    ratingEl.innerHTML = '';
+    ratingEl.textContent = '';
+  }
+  // Libri simili: prima stesso autore, poi stessa categoria (max 3 totali)
+  const simEl  = document.getElementById('bp-similar');
+  const simList = document.getElementById('bp-similar-list');
+  simEl.style.display = 'none';
+  simList.innerHTML = '';
+
+  const sameAuthor = _books.filter(b =>
+    b.id !== bookId && b.author === book.author
+  ).slice(0, 3);
+
+  let similar = [...sameAuthor];
+  if (similar.length < 3 && book.genre) {
+    const sameGenre = _books.filter(b =>
+      b.id !== bookId &&
+      !similar.find(s => s.id === b.id) &&
+      b.genre === book.genre
+    ).slice(0, 3 - similar.length);
+    similar = [...similar, ...sameGenre];
+  }
+
+  if (similar.length) {
+    simList.innerHTML = similar.map(b => {
+      const taken = _takenBookIds.includes(b.id);
+      return `<div style="display:flex;align-items:center;gap:.6rem;padding:6px 10px;
+                   background:var(--cream);border-radius:8px;cursor:pointer"
+                   onclick="closeModal('modal-book-preview');setTimeout(()=>openBookPreview('${b.id}'),200)">
+        ${b.coverUrl ? `<img src="${b.coverUrl}" style="width:28px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'"/>` : '<span style="font-size:1.2rem">📖</span>'}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.82rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
+          <div style="font-size:.75rem;color:var(--brown-light)">${b.author}</div>
+        </div>
+        ${taken ? '<span style="font-size:.72rem;color:var(--red);flex-shrink:0">Non disp.</span>' : '<span style="font-size:.72rem;color:var(--green);flex-shrink:0">Disponibile</span>'}
+      </div>`;
+    }).join('');
+    simEl.style.display = 'block';
   }
 }
 
@@ -2620,7 +3204,12 @@ async function confirmReturn() {
 
     showToast(msg);
     closeModal('modal-return');
-    setTimeout(() => openReviewPrompt(selectedBook.id, selectedBook.title, loan.id), 700);
+    // Prima recensione, poi "passa il libro"
+    setTimeout(() => {
+      openReviewPrompt(selectedBook.id, selectedBook.title, loan.id);
+      // Dopo la recensione apre il modal "passa il libro"
+      _pendingPassBook = { id: selectedBook.id, title: selectedBook.title };
+    }, 700);
   } catch(e) { showToast('❌ ' + e.message); }
   finally { hideLoading(); }
 }
@@ -2638,7 +3227,7 @@ function openReviewPrompt(bookId, bookTitle, loanId) {
 
 function skipReview() {
   closeModal('modal-review');
-  goReturn();
+  _maybeOpenPassBook();
 }
 
 async function submitReview() {
@@ -2651,7 +3240,7 @@ async function submitReview() {
     }, 'student');
     showToast('⭐ Grazie per la recensione!');
     closeModal('modal-review');
-    goReturn();
+    _maybeOpenPassBook();
   } catch (e) {
     showToast('❌ ' + e.message);
   } finally {
@@ -2849,11 +3438,13 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active', t===tab);
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
-  if (tab==='loans')    renderLoans();
+  if (tab==='loans')    { renderLoans(); renderLoansCalendar(); }
   if (tab==='history')  renderHistory();
   if (tab==='classes')  renderClassesTable();
   if (tab==='teachers') renderTeachersTable();
   if (tab==='messages') populateBroadcastSelects();
+  if (tab==='logs')    loadAccessLogs();
+  if (tab==='map')     loadLibraryMap();
 }
 
 // ── Messaggio broadcast admin (studenti/professori/classi/alunni) ──────────────
@@ -3036,10 +3627,12 @@ function sortBooks(col) {
 
 // ── Books table ───────────────────────────────────────────────────────────────
 function renderBooksTable() {
-  const q = (document.getElementById('admin-search')?.value||'').toLowerCase().trim();
+  const q  = (document.getElementById('admin-search')?.value||'').toLowerCase().trim();
+  const ql = (document.getElementById('admin-location-filter')?.value||'').toLowerCase().trim();
   let books = q ? _books.filter(b =>
     b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) ||
-    b.location.toLowerCase().includes(q) || (b.genre||'').toLowerCase().includes(q)) : [..._books];
+    (b.genre||'').toLowerCase().includes(q)) : [..._books];
+  if (ql) books = books.filter(b => b.location.toLowerCase().includes(ql));
   books = [...books].sort((a,b) => {
     const va=(a[sortCol]||'').toLowerCase(), vb=(b[sortCol]||'').toLowerCase();
     return va<vb ? -sortDir : va>vb ? sortDir : 0;
@@ -3065,13 +3658,54 @@ function renderBooksTable() {
       <td>${b.publisher||'—'}</td>
       <td>${b.location}</td>
       <td><span class="genre-tag">${b.genre||'—'}</span></td>
-      <td>${takenIds.includes(b.id) ? '<span class="badge-taken">In prestito</span>' : '<span class="badge-available">Disponibile</span>'}</td>
+      <td>${_bookStatusBadge(b)}</td>
       <td>
         <button class="btn-edit" onclick="openEditBook('${b.id}')">✏️</button>
+        <button class="btn-edit" onclick="openBookStatusModal('${b.id}')" title="Cambia stato" style="border-color:var(--brown-light)">🔧</button>
         <button class="btn-edit" onclick="fetchSingleCover('${b.id}', this)" title="Cerca copertina" style="border-color:var(--gold)">🖼</button>
         <button class="btn-del"  onclick="openDeleteBook('${b.id}')" ${takenIds.includes(b.id)?'disabled title="In prestito"':''}>🗑</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--brown-light)">Nessun libro</td></tr>';
+}
+
+// ── Stato libro ───────────────────────────────────────────────────────────────
+const BOOK_STATUS_LABELS = {
+  disponibile:    { label: 'Disponibile',    color: '#2E6B45', bg: '#EAF5EE' },
+  in_prestito:    { label: 'In prestito',    color: '#7a5c00', bg: '#FFF8E1' },
+  in_riparazione: { label: 'In riparazione', color: '#8B5E00', bg: '#FFF3DC' },
+  smarrito:       { label: 'Smarrito',       color: '#A63228', bg: '#FDECEA' },
+};
+
+function _bookStatusBadge(b) {
+  const takenIds = _loans.filter(l=>!l.returned).map(l=>l.bookId);
+  const status = takenIds.includes(b.id) ? 'in_prestito' : (b.bookStatus || 'disponibile');
+  const s = BOOK_STATUS_LABELS[status] || BOOK_STATUS_LABELS['disponibile'];
+  return `<span style="background:${s.bg};color:${s.color};border-radius:10px;
+    padding:2px 9px;font-size:.75rem;font-weight:700;white-space:nowrap">${s.label}</span>`;
+}
+
+let _statusBookId = null;
+function openBookStatusModal(bookId) {
+  const book = _books.find(b => b.id === bookId);
+  if (!book) return;
+  _statusBookId = bookId;
+  document.getElementById('book-status-title').textContent = book.title;
+  document.getElementById('book-status-select').value = book.bookStatus || 'disponibile';
+  openModal('modal-book-status');
+}
+
+async function saveBookStatus() {
+  const status = document.getElementById('book-status-select').value;
+  showLoading('Aggiornamento…');
+  try {
+    const updated = await api('PATCH', `/books/${_statusBookId}/status`, { book_status: status }, 'admin');
+    const idx = _books.findIndex(b => b.id === _statusBookId);
+    if (idx >= 0) _books[idx] = { ..._books[idx], ...updated };
+    closeModal('modal-book-status');
+    renderBooksTable();
+    showToast('✅ Stato aggiornato');
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
 }
 
 // ── Fetch cover for single book from table ────────────────────────────────────
@@ -3115,6 +3749,7 @@ function openEditBook(id) {
   else if (coverWrap) coverWrap.style.display='none';
   openModal('modal-edit');
 }
+
 async function saveEditBook() {
   const t = document.getElementById('e-title').value.trim();
   const a = document.getElementById('e-author').value.trim();
@@ -3127,7 +3762,7 @@ async function saveEditBook() {
       publisher: document.getElementById('e-publisher').value.trim(),
       location: l,
       genre: document.getElementById('e-genre').value.trim(),
-      language: document.getElementById('e-language').value || 'it',
+      language: document.getElementById('e-language').value,
       cover_url: document.getElementById('e-cover').value.trim() || null
     }, 'admin');
     const idx = _books.findIndex(b => b.id === editBookId);
@@ -3274,10 +3909,12 @@ async function resetCoversCheck(onlyNotFound) {
 }
 
 async function addBook() {
-  const t = document.getElementById('a-title').value.trim();
+  const titleEl = document.getElementById('a-title');
+  const t = titleEl.value.trim();
   const a = document.getElementById('a-author').value.trim();
   const l = document.getElementById('a-location').value.trim();
   if (!t||!a||!l) { showToast('⚠️ Titolo, autore e posizione obbligatori'); return; }
+  const acCoverUrl = titleEl.dataset.coverUrl || '';
   showLoading('Aggiunta libro…');
   try {
     const book = await api('POST', '/books', {
@@ -3286,24 +3923,31 @@ async function addBook() {
       location: l,
       genre: document.getElementById('a-genre').value.trim(),
       isbn: document.getElementById('a-isbn').value.trim(),
-      language: document.getElementById('a-language').value || 'it',
+      cover_url: acCoverUrl || undefined,
     }, 'admin');
 
-    // Cerca copertina subito dopo la creazione
-    showLoading('Ricerca copertina…');
-    try {
-      const cover = await api('POST', `/books/${book.id}/fetch-cover`, null, 'admin');
-      book.coverUrl = cover.coverUrl;
-      book.openlibraryChecked = true;
-      if (cover.found) showToast(`✅ "${t}" aggiunto con copertina!`);
-      else             showToast(`✅ "${t}" aggiunto (copertina non trovata).`);
-    } catch {
-      showToast(`✅ "${t}" aggiunto!`);
+    // Se l'autocomplete ha già fornito una copertina, non cercarla di nuovo
+    if (acCoverUrl) {
+      book.coverUrl = acCoverUrl;
+      showToast(`✅ "${t}" aggiunto con copertina!`);
+    } else {
+      showLoading('Ricerca copertina…');
+      try {
+        const cover = await api('POST', `/books/${book.id}/fetch-cover`, null, 'admin');
+        book.coverUrl = cover.coverUrl;
+        book.openlibraryChecked = true;
+        if (cover.found) showToast(`✅ "${t}" aggiunto con copertina!`);
+        else             showToast(`✅ "${t}" aggiunto (copertina non trovata).`);
+      } catch {
+        showToast(`✅ "${t}" aggiunto!`);
+      }
     }
 
     _books.push(book);
-    ['a-title','a-author','a-publisher','a-location','a-genre','a-isbn'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('a-language').value = 'it';
+    ['a-author','a-publisher','a-location','a-genre','a-isbn'].forEach(id => document.getElementById(id).value='');
+    titleEl.value = '';
+    titleEl.dataset.coverUrl = '';
+    closeAcDropdown();
     renderBooksTable();
     renderStats();
     } catch(e) { showToast('❌ ' + e.message); }
@@ -3523,6 +4167,80 @@ async function toggleWishlist(e, bookId) {
 }
 
 // ── PDF ───────────────────────────────────────────────────────────────────────
+// ── Etichette scaffale ────────────────────────────────────────────────────────
+function _generateBarcodePng(value) {
+  try {
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, value, {
+      format:'CODE128', width:2, height:28,
+      displayValue:true, fontSize:9, margin:2,
+      background:'#ffffff', lineColor:'#000000',
+    });
+    return canvas.toDataURL('image/png');
+  } catch(e) { return null; }
+}
+
+function exportLabels(mode) {
+  const { jsPDF } = window.jspdf;
+  const adminSearch = document.getElementById('admin-search');
+  const q = (adminSearch?.value || '').toLowerCase().trim();
+  let books;
+  if (mode === 'all') {
+    books = [..._books].sort((a,b) => a.location.localeCompare(b.location));
+  } else if (mode === 'filtered') {
+    books = q ? _books.filter(b =>
+      b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) ||
+      b.location.toLowerCase().includes(q) || (b.genre||'').toLowerCase().includes(q)
+    ) : [..._books];
+    books.sort((a,b) => a.location.localeCompare(b.location));
+  } else {
+    books = _books.filter(b => !b.isbn).sort((a,b) => a.location.localeCompare(b.location));
+  }
+  if (!books.length) { showToast('⚠️ Nessun libro da stampare.'); return; }
+
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const MARGIN_X=6, MARGIN_Y=10, LABEL_W=48, LABEL_H=25, GAP_X=1, GAP_Y=2, COLS=4;
+  const ROWS_PER_PAGE = Math.floor((297 - MARGIN_Y*2) / (LABEL_H + GAP_Y));
+  const BRN=[92,61,46];
+  let col=0, row=0;
+
+  books.forEach((book, idx) => {
+    if (idx > 0 && col===0 && row===0) doc.addPage();
+    const x = MARGIN_X + col*(LABEL_W+GAP_X);
+    const y = MARGIN_Y + row*(LABEL_H+GAP_Y);
+    doc.setDrawColor(180,180,180); doc.setLineWidth(0.2); doc.rect(x,y,LABEL_W,LABEL_H);
+    doc.setFillColor(...BRN); doc.rect(x,y,LABEL_W,6,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text(`📍 ${book.location}`, x+2, y+4.2);
+    doc.setTextColor(30,30,30); doc.setFontSize(6); doc.setFont('helvetica','bold');
+    const titleLines = doc.splitTextToSize(book.title, LABEL_W-4);
+    doc.text(titleLines.slice(0,2), x+2, y+9);
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,80,60);
+    doc.text(book.author.length>28 ? book.author.substring(0,26)+'…' : book.author, x+2, y+14.5);
+    if (book.isbn) {
+      try {
+        const barcodeImg = _generateBarcodePng(book.isbn);
+        if (barcodeImg) doc.addImage(barcodeImg,'PNG',x+1,y+16,LABEL_W-2,8);
+      } catch(e) {
+        doc.setFontSize(5); doc.setTextColor(80,80,80);
+        doc.text(`ISBN: ${book.isbn}`, x+2, y+22);
+      }
+    } else {
+      doc.setDrawColor(196,154,60); doc.setLineWidth(0.3);
+      doc.line(x+2,y+22,x+LABEL_W-2,y+22);
+      doc.setFontSize(4.5); doc.setTextColor(160,140,100);
+      doc.text('ISBN non disponibile', x+2, y+21);
+    }
+    col++;
+    if (col>=COLS) { col=0; row++; }
+    if (row>=ROWS_PER_PAGE) { col=0; row=0; }
+  });
+
+  const dateStr = new Date().toLocaleDateString('it-IT').replace(/\//g,'-');
+  doc.save(`etichette_${mode}_${dateStr}.pdf`);
+  showToast(`✅ PDF etichette: ${books.length} etichette`);
+}
+
 function exportPDF(type) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -3692,6 +4410,144 @@ function resetImport() {
 }
 
 // ── Backup / Restore / Reset ──────────────────────────────────────────────────
+// ── Import alunni da CSV ──────────────────────────────────────────────────────
+async function importStudentsCSV(file) {
+  if (!file) return;
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) { showToast('⚠️ File vuoto'); return; }
+
+  // Rimuove intestazione
+  const dataLines = lines[0].toLowerCase().startsWith('nome') ? lines.slice(1) : lines;
+  if (!dataLines.length) { showToast('⚠️ Nessun dato trovato'); return; }
+
+  let imported = 0, skipped = 0, errors = [];
+  const unknownClasses = new Set();
+
+  showLoading(`Importazione ${dataLines.length} alunni…`);
+
+  for (const line of dataLines) {
+    const parts = line.split(/[;,]/).map(p => p.trim().replace(/^"|"$/g, ''));
+    if (parts.length < 3) { errors.push(`Riga non valida: "${line}"`); continue; }
+    const [nome, cognome, classe, note=''] = parts;
+    if (!nome || !cognome || !classe) { errors.push(`Dati mancanti: "${line}"`); continue; }
+    const fullName = `${nome} ${cognome}`;
+
+    // Verifica se classe esiste
+    const cls = _classes.find(c => c.name.trim().toLowerCase() === classe.trim().toLowerCase());
+    if (!cls) { unknownClasses.add(classe); skipped++; continue; }
+
+    // Salta duplicati (stesso nome + stessa classe)
+    const dup = _students.find(s =>
+      s.fullName.toLowerCase() === fullName.toLowerCase() && s.classId === cls.id);
+    if (dup) { skipped++; continue; }
+
+    try {
+      const s = await api('POST', '/students', {
+        full_name: fullName,
+        class_id: cls.id,
+        notes: note || '',
+      }, 'admin');
+      _students.push(s);
+      imported++;
+    } catch(e) {
+      errors.push(`Errore per ${fullName}: ${e.message}`);
+    }
+  }
+
+  hideLoading();
+  renderStudentsTable();
+
+  // Mostra risultati
+  let html = `<div style="color:var(--green);font-weight:700">✅ ${imported} alunni importati</div>`;
+  if (skipped) html += `<div style="color:var(--brown-light)">⏭ ${skipped} righe saltate (duplicati o classe inesistente)</div>`;
+  if (unknownClasses.size) {
+    html += `<div style="color:var(--red);font-weight:600;margin-top:.4rem">
+      ⚠️ Alunni con classi inesistenti:<br>
+      ${[...unknownClasses].map(c => `• Classe "${c}" non trovata — crea la classe prima di importare`).join('<br>')}
+    </div>`;
+  }
+  if (errors.length) {
+    html += `<div style="color:var(--red);margin-top:.4rem">Errori:<br>${errors.map(e=>`• ${e}`).join('<br>')}</div>`;
+  }
+  document.getElementById('csv-import-results').innerHTML = html;
+  openModal('modal-csv-import');
+}
+
+// ── Promozione singola classe ─────────────────────────────────────────────────
+let _promoteClassId = null;
+
+function openPromoteClass(classId) {
+  const cls = _classes.find(c => c.id === classId);
+  if (!cls) return;
+  _promoteClassId = classId;
+  document.getElementById('promote-class-name').textContent = cls.name;
+  const num = parseInt(cls.name);
+  const sel = document.getElementById('promote-class-num');
+  sel.innerHTML = '';
+  if (num === 1) {
+    sel.innerHTML = '<option value="2">2</option>';
+  } else if (num === 2) {
+    sel.innerHTML = '<option value="2">2</option><option value="3" selected>3</option>';
+  }
+  openModal('modal-promote-class');
+}
+
+async function confirmPromoteClass() {
+  const cls = _classes.find(c => c.id === _promoteClassId);
+  if (!cls) return;
+  const newNum = document.getElementById('promote-class-num').value;
+  const letter = cls.name.replace(/[0-9]/g, '');
+  const newName = `${newNum}${letter}`;
+  // Verifica se esiste già una classe con quel nome
+  if (_classes.find(c => c.name === newName && c.id !== _promoteClassId)) {
+    showToast(`⚠️ Esiste già una classe ${newName}`); return;
+  }
+  showLoading('Promozione…');
+  try {
+    const updated = await api('PATCH', `/classes/${_promoteClassId}`, { name: newName }, 'admin');
+    const idx = _classes.findIndex(c => c.id === _promoteClassId);
+    if (idx >= 0) _classes[idx] = { ..._classes[idx], ...updated };
+    closeModal('modal-promote-class');
+    renderClassesTable();
+    showToast(`✅ Classe ${cls.name} → ${newName}`);
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+// ── Cambio anno scolastico ────────────────────────────────────────────────────
+async function openYearChange() {
+  showLoading('Caricamento classi…');
+  try {
+    const classes = await api('GET', '/classes', null, 'admin');
+    const preview = document.getElementById('year-change-preview');
+    const lines = classes.map(c => {
+      const num = parseInt(c.name);
+      const letter = c.name.replace(/[0-9]/g,'');
+      if (num === 3) return `🔴 ${c.name} → <strong>ELIMINATA</strong>`;
+      if (num >= 1 && num <= 2) return `🟢 ${c.name} → <strong>${num+1}${letter}</strong>`;
+      return `⚪ ${c.name} → invariata`;
+    });
+    preview.innerHTML = lines.join('<br>') || 'Nessuna classe trovata.';
+    closeModal('modal-year-change'); // assicura chiusura prima di riaprire
+    openModal('modal-year-change');
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function confirmYearChange() {
+  showLoading('Cambio anno in corso…');
+  try {
+    const r = await api('POST', '/admin/new-school-year', null, 'admin');
+    closeModal('modal-year-change');
+    showToast(`✅ Anno aggiornato! ${r.promoted} classi promosse, ${r.deleted} eliminate, ${r.studentsReset} studenti azzerati.`);
+    await Promise.all([loadAdminData(), loadStudents()]);
+    renderClassesTable();
+    renderStudentsTable();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
 async function exportBackup() {
   showLoading('Preparazione backup…');
   try {
@@ -4016,11 +4872,14 @@ function renderClassesTable() {
   if (!tbody) return;
   tbody.innerHTML = sorted.map(c => {
     const studentCount = _students.filter(s => s.classId === c.id).length;
+    const num = parseInt(c.name);
+    const canPromote = num >= 1 && num <= 2;
     return `<tr>
       <td><strong>${c.name}</strong></td>
       <td>${c.schoolYear || '—'}</td>
       <td>${studentCount} alunni</td>
       <td><div class="student-actions">
+        ${canPromote ? `<button class="btn-sm btn-sm-welcome" onclick="openPromoteClass('${c.id}')">⬆️ Promuovi</button>` : ''}
         <button class="btn-sm btn-sm-pin" onclick="renameClass('${c.id}')">✏️ Rinomina</button>
         <button class="btn-sm btn-sm-del" onclick="deleteClassRow('${c.id}')">🗑</button>
       </div></td>
@@ -4416,6 +5275,7 @@ async function doTeacherLogin() {
 
     await loadTeacherDashboard();
     showScreen('screen-teacher-dashboard');
+    loadTeacherQuizzes();
 
     // Se il professore non ha ancora un'email, mostra il pop-up obbligatorio
     if (!currentTeacher.email) {
@@ -4452,6 +5312,7 @@ async function loadTeacherDashboard() {
   _teacherRecommendations = recs;
   renderTeacherClassesList();
   renderTeacherOverdueList();
+  renderTeacherCalendar();
   renderTeacherNotifBadge(notifs.unreadCount);
 }
 
@@ -4530,9 +5391,19 @@ async function toggleNotified(loanId, newValue) {
 // ── Modal classe: elenco alunni + consiglio di lettura ────────────────────────
 let _currentTeacherClassId = null;
 
+function switchClassTab(tab, btn) {
+  document.querySelectorAll('.tc-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tc-tab-content').forEach(c => c.style.display = 'none');
+  btn.classList.add('active');
+  document.getElementById(`tc-tab-${tab}`).style.display = 'block';
+}
+
 async function openTeacherClassModal(classId, className) {
   _currentTeacherClassId = classId;
   document.getElementById('modal-teacher-class-title').textContent = `🏫 Classe ${className}`;
+  // Resetta alla prima tab
+  document.querySelectorAll('.tc-tab').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.tc-tab-content').forEach((c,i) => c.style.display = i===0?'block':'none');
   showLoading('Caricamento classe…');
   try {
     renderTeacherClassRecommendation(classId);
@@ -4863,18 +5734,112 @@ function _getPopularityMap() {
   return map;
 }
 
-function chatSend() {
+async function chatSend() {
   const input = document.getElementById('chat-input');
   const q = input.value.trim();
   if (!q) return;
   input.value = '';
   _chatUserMsg(q);
 
+  // Mostra indicatore "sta scrivendo…"
+  _chatBotMsg('<em style="color:var(--brown-light)">💭 Sto cercando…</em>');
+
+  // Prova Claude API → fallback keyword
+  try {
+    await _chatWithClaude(q);
+  } catch(e) {
+    // Rimuove il messaggio "sta scrivendo"
+    _chatHistory.pop();
+    _chatKeywordFallback(q);
+  }
+}
+
+async function _chatWithClaude(q) {
+  const takenIds  = _takenBookIds || [];
+  const popularity = _getPopularityMap();
+
+  // Costruisce lista libri per Claude (max 200 titoli per non saturare il contesto)
+  const bookList = [..._books]
+    .sort((a,b) => (popularity[b.id]||0) - (popularity[a.id]||0))
+    .slice(0, 200)
+    .map(b => `- "${b.title}" di ${b.author} [${b.genre||'vario'}]${takenIds.includes(b.id) ? ' (NON disponibile)' : ''}`)
+    .join('\n');
+
+  const systemPrompt = `Sei un assistente bibliotecario scolastico. 
+Rispondi SEMPRE in italiano, in modo breve e amichevole (max 2 frasi).
+Suggerisci SOLO libri presenti in questa lista del catalogo della biblioteca:
+
+${bookList}
+
+Formato risposta OBBLIGATORIO (JSON puro, niente testo fuori):
+{
+  "message": "testo introduttivo breve",
+  "books": ["Titolo esatto 1", "Titolo esatto 2", "Titolo esatto 3"]
+}
+
+I titoli in "books" devono corrispondere ESATTAMENTE ai titoli nella lista sopra.
+Suggerisci al massimo 3 libri. Se non ci sono libri adatti, metti "books": [].`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 400,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: q }],
+    }),
+  });
+
+  if (!response.ok) throw new Error('Claude non disponibile');
+  const data = await response.json();
+  const text = data.content?.[0]?.text || '';
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    throw new Error('Risposta non valida');
+  }
+
+  // Rimuove il messaggio "sta scrivendo"
+  _chatHistory.pop();
+
+  const { message = '', books = [] } = parsed;
+  if (!books.length) {
+    _chatBotMsg(message || 'Non ho trovato libri adatti. Prova con parole diverse!');
+    return;
+  }
+
+  // Trova i libri nel catalogo locale (match esatto o parziale)
+  const matched = books.map(title =>
+    _books.find(b => b.title.toLowerCase() === title.toLowerCase()) ||
+    _books.find(b => b.title.toLowerCase().includes(title.toLowerCase().slice(0, 10)))
+  ).filter(Boolean).slice(0, 3);
+
+  if (!matched.length) {
+    _chatBotMsg(message || 'Non ho trovato libri adatti nel catalogo.');
+    return;
+  }
+
+  let html = `${message}<br><br>`;
+  html += matched.map(b => {
+    const avail = !takenIds.includes(b.id);
+    const pop   = popularity[b.id] || 0;
+    return `<div class="chat-book-chip" onclick="chatPickBook('${b.id}')">
+      ${avail ? '✅' : '🔴'} <strong>${b.title}</strong><br>
+      <span style="color:var(--brown-light)">${b.author}${pop > 0 ? ` · preso ${pop}×` : ''}</span>
+    </div>`;
+  }).join('');
+
+  _chatBotMsg(html);
+}
+
+function _chatKeywordFallback(q) {
   const cat = _detectCategory(q);
   const popularity = _getPopularityMap();
   const takenIds = _takenBookIds || [];
 
-  // Filtra libri per categoria rilevata (o tutti se non rilevata)
   let candidates = cat
     ? _books.filter(b => bookMatchesCategory(b, cat, null))
     : _books.filter(b => {
@@ -4889,7 +5854,6 @@ function chatSend() {
     return;
   }
 
-  // Ordina: prima disponibili, poi per popolarità decrescente
   candidates = [...candidates].sort((a, b) => {
     const aAvail = !takenIds.includes(a.id) ? 1 : 0;
     const bAvail = !takenIds.includes(b.id) ? 1 : 0;
@@ -4902,10 +5866,9 @@ function chatSend() {
   html += candidates.map(b => {
     const avail = !takenIds.includes(b.id);
     const pop   = popularity[b.id] || 0;
-    const popTxt = pop > 0 ? ` · preso ${pop}×` : '';
     return `<div class="chat-book-chip" onclick="chatPickBook('${b.id}')">
       ${avail ? '✅' : '🔴'} <strong>${b.title}</strong><br>
-      <span style="color:var(--brown-light)">${b.author}${popTxt}</span>
+      <span style="color:var(--brown-light)">${b.author}${pop > 0 ? ` · preso ${pop}×` : ''}</span>
     </div>`;
   }).join('');
 
@@ -4922,6 +5885,1151 @@ function chatPickBook(bookId) {
   _chatBotMsg(`Ottima scelta! Clicca "Conferma" per prendere <strong>${book.title}</strong>.`);
   setTimeout(() => { toggleChat(); openTakeModal(bookId); }, 600);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QUIZ / FORM
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _quizType = 'form';
+let _quizQuestions = [];
+let _editingQuizId = null;
+// Stato compilazione studente
+let _qs = { quizId:null, submissionId:null, answers:{}, timerInterval:null, endTime:null };
+
+// ── Builder professore ────────────────────────────────────────────────────────
+function openQuizBuilder(quizId = null) {
+  _editingQuizId = quizId;
+  _quizQuestions = [];
+  _quizType = 'form';
+  document.getElementById('qb-title').value = '';
+  document.getElementById('qb-subtitle').value = '';
+  document.getElementById('qb-timer').value = '';
+  // Popola select classi del prof
+  const sel = document.getElementById('qb-class');
+  const classes = currentTeacher?.classIds || [];
+  const names   = currentTeacher?.classNames || [];
+  sel.innerHTML = '<option value="">— Tutte le classi mie —</option>' +
+    classes.map((id,i) => `<option value="${id}">${names[i]}</option>`).join('');
+  document.getElementById('qb-questions').innerHTML = '';
+  setQuizType('form');
+  if (quizId) {
+    document.getElementById('quiz-builder-title').textContent = '✏️ Modifica Quiz / Form';
+    api('GET', `/teacher/quizzes/${quizId}`, null, 'teacher').then(q => {
+      document.getElementById('qb-title').value = q.title;
+      document.getElementById('qb-subtitle').value = q.subtitle || '';
+      document.getElementById('qb-timer').value = q.timerMinutes || '';
+      document.getElementById('qb-class').value = q.classId || '';
+      setQuizType(q.quizType);
+      _quizQuestions = q.questions || [];
+      renderQuizQuestions();
+    });
+  } else {
+    document.getElementById('quiz-builder-title').textContent = '📝 Crea Quiz / Form';
+  }
+  openModal('modal-quiz-builder');
+}
+
+function setQuizType(type) {
+  _quizType = type;
+  document.getElementById('qb-type-form').className = type==='form' ? 'btn-confirm' : 'btn-cancel';
+  document.getElementById('qb-type-quiz').className = type==='quiz' ? 'btn-confirm' : 'btn-cancel';
+}
+
+const Q_TYPES_FORM = ['short','paragraph','multiple','checkbox','dropdown','ranking'];
+const Q_TYPES_QUIZ = ['multiple','checkbox'];
+const Q_TYPE_LABELS = {short:'Risposta breve',paragraph:'Paragrafo',multiple:'Scelta multipla',checkbox:'Checkbox',dropdown:'Dropdown',ranking:'Classificazione'};
+
+function addQuizQuestion() {
+  const types = _quizType === 'quiz' ? Q_TYPES_QUIZ : Q_TYPES_FORM;
+  _quizQuestions.push({ id:'q_'+Date.now(), text:'', questionType: types[0], required:false, options:[''], correctAnswers:[], points:1 });
+  renderQuizQuestions();
+}
+
+function renderQuizQuestions() {
+  const types = _quizType === 'quiz' ? Q_TYPES_QUIZ : Q_TYPES_FORM;
+  const el = document.getElementById('qb-questions');
+  el.innerHTML = _quizQuestions.map((q, i) => `
+    <div class="quiz-question-card">
+      <div class="qq-header">
+        <span style="font-size:.82rem;color:var(--brown-light)">Domanda ${i+1}</span>
+        <button class="btn-sm btn-sm-del" onclick="removeQuizQuestion(${i})">🗑</button>
+      </div>
+      <input type="text" value="${q.text.replace(/"/g,'&quot;')}" placeholder="Testo della domanda *"
+             onchange="_quizQuestions[${i}].text=this.value"
+             style="width:100%;padding:8px 10px;border:2px solid var(--warm);border-radius:8px;
+                    font-family:'Poppins',sans-serif;font-size:.88rem;margin-bottom:.5rem"/>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem">
+        <select onchange="_quizQuestions[${i}].questionType=this.value;renderQuizQuestions()"
+                style="padding:6px 10px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.82rem">
+          ${types.map(t => `<option value="${t}" ${q.questionType===t?'selected':''}>${Q_TYPE_LABELS[t]}</option>`).join('')}
+        </select>
+        <label style="font-size:.82rem;display:flex;align-items:center;gap:.3rem;cursor:pointer">
+          <input type="checkbox" ${q.required?'checked':''} onchange="_quizQuestions[${i}].required=this.checked"/> Obbligatoria
+        </label>
+        ${_quizType==='quiz' ? `<label style="font-size:.82rem;display:flex;align-items:center;gap:.3rem">Punti:
+          <input type="number" min="1" value="${q.points||1}" onchange="_quizQuestions[${i}].points=+this.value"
+                 style="width:50px;padding:4px 6px;border:1px solid var(--warm);border-radius:6px;font-size:.82rem"/></label>` : ''}
+      </div>
+      ${['multiple','checkbox','dropdown','ranking'].includes(q.questionType) ? `
+        <div id="opts-${i}">
+          ${(q.options||['']).map((opt,oi) => `
+            <div class="quiz-option-row">
+              ${_quizType==='quiz' ? `<input type="checkbox" title="Risposta corretta"
+                ${(q.correctAnswers||[]).includes(opt)?'checked':''}
+                onchange="toggleCorrect(${i},'${opt.replace(/'/g,"\\'")}',this.checked)"/>` : ''}
+              <input type="text" value="${opt.replace(/"/g,'&quot;')}" placeholder="Opzione ${oi+1}"
+                     onchange="updateOption(${i},${oi},this.value)"
+                     style="flex:1;padding:6px 10px;border:1px solid var(--warm);border-radius:6px;font-family:'Poppins',sans-serif;font-size:.85rem"/>
+              <button class="btn-sm btn-sm-del" onclick="removeOption(${i},${oi})">✕</button>
+            </div>`).join('')}
+          <button class="btn-add-question" onclick="addOption(${i})" style="font-size:.78rem;padding:4px 12px">+ Opzione</button>
+        </div>` : ''}
+    </div>`).join('');
+}
+
+function removeQuizQuestion(i) { _quizQuestions.splice(i,1); renderQuizQuestions(); }
+function addOption(i) { _quizQuestions[i].options.push(''); renderQuizQuestions(); }
+function removeOption(i,oi) { _quizQuestions[i].options.splice(oi,1); renderQuizQuestions(); }
+function updateOption(i,oi,val) { _quizQuestions[i].options[oi]=val; }
+function toggleCorrect(i, val, checked) {
+  const q = _quizQuestions[i];
+  q.correctAnswers = q.correctAnswers || [];
+  if (checked) { if (!q.correctAnswers.includes(val)) q.correctAnswers.push(val); }
+  else q.correctAnswers = q.correctAnswers.filter(v => v!==val);
+}
+
+function _buildQuizPayload() {
+  return {
+    title: document.getElementById('qb-title').value.trim(),
+    subtitle: document.getElementById('qb-subtitle').value.trim(),
+    quiz_type: _quizType,
+    timer_minutes: parseInt(document.getElementById('qb-timer').value)||null,
+    class_id: document.getElementById('qb-class').value || null,
+    student_names: [],
+    questions: _quizQuestions.map((q,i) => ({
+      text: q.text, questionType: q.questionType, required: q.required,
+      options: q.options||[], correctAnswers: q.correctAnswers||[], points: q.points||1, order: i,
+    })),
+  };
+}
+
+async function saveQuizDraft() {
+  const payload = _buildQuizPayload();
+  if (!payload.title) { showToast('⚠️ Inserisci un titolo'); return; }
+  showLoading('Salvataggio…');
+  try {
+    if (_editingQuizId) {
+      await api('PATCH', `/teacher/quizzes/${_editingQuizId}`, payload, 'teacher');
+    } else {
+      await api('POST', '/teacher/quizzes', payload, 'teacher');
+    }
+    closeModal('modal-quiz-builder');
+    showToast('💾 Bozza salvata');
+    loadTeacherQuizzes();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function saveAndActivateQuiz() {
+  const payload = _buildQuizPayload();
+  if (!payload.title) { showToast('⚠️ Inserisci un titolo'); return; }
+  if (!payload.questions.length) { showToast('⚠️ Aggiungi almeno una domanda'); return; }
+  showLoading('Attivazione…');
+  try {
+    let q;
+    if (_editingQuizId) {
+      q = await api('PATCH', `/teacher/quizzes/${_editingQuizId}`, payload, 'teacher');
+    } else {
+      q = await api('POST', '/teacher/quizzes', payload, 'teacher');
+    }
+    await api('POST', `/teacher/quizzes/${q.id}/activate`, null, 'teacher');
+    closeModal('modal-quiz-builder');
+    showToast('✅ Quiz attivato!');
+    loadTeacherQuizzes();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function loadTeacherQuizzes() {
+  try {
+    const quizzes = await api('GET', '/teacher/quizzes', null, 'teacher');
+    renderTeacherQuizList(quizzes);
+  } catch(e) {}
+}
+
+function renderTeacherQuizList(quizzes) {
+  const el = document.getElementById('teacher-quiz-list');
+  if (!quizzes.length) {
+    el.innerHTML = '<div class="profile-empty">Nessun quiz creato ancora.</div>';
+    return;
+  }
+  el.innerHTML = quizzes.map(q => {
+    const badge = `<span class="quiz-status-badge quiz-status-${q.status}">${
+      q.status==='draft'?'Bozza':q.status==='active'?'Attivo':'Chiuso'}</span>`;
+    return `<div class="quiz-builder" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
+      <div>
+        <div style="font-weight:700;color:var(--brown)">${q.title} ${badge}</div>
+        <div style="font-size:.8rem;color:var(--brown-light)">${q.quizType==='quiz'?'🎯 Quiz':'📋 Form'} ${q.timerMinutes?'· ⏱ '+q.timerMinutes+' min':''} ${q.className?'· '+q.className:''}</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        ${q.status==='draft' ? `<button class="btn-sm btn-sm-pin" onclick="openQuizBuilder('${q.id}')">✏️ Modifica</button>
+          <button class="btn-sm btn-sm-welcome" onclick="activateQuiz('${q.id}')">▶ Attiva</button>` : ''}
+        ${q.status==='active' ? `<button class="btn-sm btn-sm-toggle" onclick="closeQuiz('${q.id}')">⏹ Chiudi</button>` : ''}
+        ${q.status!=='draft' ? `<button class="btn-sm btn-sm-welcome" onclick="openQuizResults('${q.id}')">📊 Risultati</button>` : ''}
+        <button class="btn-sm btn-sm-del" onclick="deleteQuiz('${q.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function activateQuiz(id) {
+  showLoading('Attivazione…');
+  try {
+    await api('POST', `/teacher/quizzes/${id}/activate`, null, 'teacher');
+    showToast('✅ Quiz attivato!'); loadTeacherQuizzes();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function closeQuiz(id) {
+  showLoading('Chiusura…');
+  try {
+    await api('POST', `/teacher/quizzes/${id}/close`, null, 'teacher');
+    showToast('⏹ Quiz chiuso.'); loadTeacherQuizzes();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Eliminare questo quiz e tutte le risposte?')) return;
+  showLoading('Eliminazione…');
+  try {
+    await api('DELETE', `/teacher/quizzes/${id}`, null, 'teacher');
+    showToast('🗑 Eliminato.'); loadTeacherQuizzes();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function openQuizResults(quizId) {
+  showLoading('Caricamento risultati…');
+  try {
+    const data = await api('GET', `/teacher/quizzes/${quizId}/results`, null, 'teacher');
+    const subs = data.submissions.filter(s => s.submittedAt);
+    const isQuiz = data.quiz.quizType === 'quiz';
+    const html = subs.length
+      ? `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
+          <tr style="background:var(--brown);color:var(--gold-light)">
+            <th style="padding:8px 12px;text-align:left">Studente</th>
+            <th style="padding:8px 12px;text-align:center">${isQuiz?'Punteggio':'Completato'}</th>
+          </tr>
+          ${subs.map(s=>`<tr style="border-bottom:1px solid var(--warm)">
+            <td style="padding:8px 12px">${s.studentName}</td>
+            <td style="padding:8px 12px;text-align:center">${isQuiz&&s.score!=null?s.score+'/'+s.maxScore:'✓'}</td>
+          </tr>`).join('')}
+        </table>
+        ${isQuiz?`<div style="margin-top:.8rem;text-align:right">
+          <button class="btn-confirm" onclick="publishQuizResults('${quizId}')">📤 Pubblica punteggi</button>
+        </div>`:''}` 
+      : '<div class="profile-empty">Nessuna risposta ancora.</div>';
+    // Apre un toast modal temporaneo
+    showToast(`📊 ${subs.length} risposte su ${data.quiz.title}`);
+    // Mostra in un modal generico
+    document.getElementById('modal-del').querySelector('h3').textContent = `📊 Risultati: ${data.quiz.title}`;
+    document.getElementById('modal-del-msg').innerHTML = html;
+    document.getElementById('modal-del').querySelector('.btn-confirm').style.display='none';
+    document.getElementById('modal-del').querySelector('.btn-cancel').textContent='Chiudi';
+    openModal('modal-del');
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+async function publishQuizResults(quizId) {
+  showLoading('Pubblicazione…');
+  try {
+    const r = await api('POST', `/teacher/quizzes/${quizId}/publish-results`, null, 'teacher');
+    closeModal('modal-del');
+    showToast(`✅ Punteggi pubblicati a ${r.published} studenti`);
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+// ── Compilazione quiz (studente) ──────────────────────────────────────────────
+let _currentQuiz = null;
+
+async function openStudentQuiz(quizId) {
+  showLoading('Caricamento…');
+  try {
+    const quizzes = await api('GET', '/student/quizzes/available', null, 'student');
+    const qInfo = quizzes.find(q => q.id === quizId);
+    if (!qInfo) { showToast('❌ Quiz non disponibile'); return; }
+    const full = await api('GET', `/student/quizzes/${quizId}/detail`, null, 'student').catch(() => null);
+    if (!full) { showToast('❌ Impossibile caricare il quiz'); return; }
+    // Start/resume
+    const sub = await api('POST', `/student/quizzes/${quizId}/start`, null, 'student');
+    _currentQuiz = { ...full, submissionId: sub.id };
+    _qs.quizId = quizId;
+    _qs.submissionId = sub.id;
+    _qs.answers = JSON.parse(qInfo.savedAnswers || '{}');
+    document.getElementById('qs-title').textContent = full.title;
+    document.getElementById('qs-subtitle').textContent = full.subtitle || '';
+    renderQuizStudentBody();
+    // Timer
+    if (full.timerMinutes && sub.startedAt) {
+      const end = new Date(new Date(sub.startedAt).getTime() + full.timerMinutes * 60000);
+      _qs.endTime = end;
+      startQuizTimer(end);
+    }
+    document.getElementById('modal-quiz-student').style.display = 'flex';
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+function renderQuizStudentBody() {
+  const qs = _currentQuiz.questions || [];
+  const total = qs.length;
+  const answered = qs.filter(q => _qs.answers[q.id] !== undefined && _qs.answers[q.id] !== '').length;
+  document.getElementById('qs-progress-bar').style.width = total ? (answered/total*100)+'%' : '0%';
+  document.getElementById('qs-counter').textContent = `${answered} / ${total} risposte`;
+
+  document.getElementById('qs-body').innerHTML = qs.map((q,i) => {
+    const val = _qs.answers[q.id];
+    const opts = JSON.parse(q.options || '[]');
+    let input = '';
+    if (q.questionType === 'short') {
+      input = `<input class="quiz-input-short" type="text" value="${(val||'').replace(/"/g,'&quot;')}"
+                oninput="quizSaveAnswer('${q.id}',this.value,false)" placeholder="La tua risposta…"/>`;
+    } else if (q.questionType === 'paragraph') {
+      input = `<textarea class="quiz-input-long" oninput="quizSaveAnswer('${q.id}',this.value,false)"
+                placeholder="La tua risposta…">${val||''}</textarea>`;
+    } else if (q.questionType === 'multiple') {
+      input = opts.map(o => `<div class="quiz-option-choice ${val===o?'selected':''}" onclick="quizSaveAnswer('${q.id}','${o.replace(/'/g,"\\'")}',true)">
+        <span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--brown);display:inline-block;flex-shrink:0;background:${val===o?'var(--brown)':'white'}"></span>
+        ${o}</div>`).join('');
+    } else if (q.questionType === 'checkbox') {
+      const selected = Array.isArray(val) ? val : [];
+      input = opts.map(o => `<div class="quiz-option-choice ${selected.includes(o)?'selected':''}"
+        onclick="quizToggleCheckbox('${q.id}','${o.replace(/'/g,"\\'")}')">
+        <span style="width:16px;height:16px;border-radius:3px;border:2px solid var(--brown);display:inline-block;flex-shrink:0;background:${selected.includes(o)?'var(--brown)':'white'}"></span>
+        ${o}</div>`).join('');
+    } else if (q.questionType === 'dropdown') {
+      input = `<select class="quiz-input-short" onchange="quizSaveAnswer('${q.id}',this.value,true)">
+        <option value="">— Seleziona —</option>
+        ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (q.questionType === 'ranking') {
+      const ranked = Array.isArray(val) ? val : [...opts];
+      input = `<div style="font-size:.8rem;color:var(--brown-light);margin-bottom:.4rem">Trascina per riordinare</div>` +
+        ranked.map((o,ri) => `<div class="quiz-option-choice" style="cursor:grab">
+          <span style="color:var(--brown-light);font-size:.8rem;margin-right:.5rem">${ri+1}.</span>${o}
+        </div>`).join('');
+    }
+    return `<div class="quiz-question-block">
+      <div class="quiz-q-text">${i+1}. ${q.text}${q.required?'<span class="quiz-q-required">*</span>':''}</div>
+      ${input}
+    </div>`;
+  }).join('');
+}
+
+function quizSaveAnswer(questionId, value, rerender = false) {
+  _qs.answers[questionId] = value;
+  // Autosave al backend senza bloccare
+  api('PATCH', `/student/quizzes/${_qs.quizId}/autosave`,
+    { answers: { [questionId]: value }, force: false }, 'student').catch(() => {});
+  // Re-render solo se richiesto (scelte/checkbox) o per aggiornare barra avanzamento
+  if (rerender) renderQuizStudentBody();
+  else _updateQuizProgress();
+}
+
+function _updateQuizProgress() {
+  const qs = _currentQuiz?.questions || [];
+  const total = qs.length;
+  const answered = qs.filter(q => {
+    const a = _qs.answers[q.id];
+    return a !== undefined && a !== '' && !(Array.isArray(a) && !a.length);
+  }).length;
+  const bar = document.getElementById('qs-progress-bar');
+  const counter = document.getElementById('qs-counter');
+  if (bar) bar.style.width = total ? (answered/total*100)+'%' : '0%';
+  if (counter) counter.textContent = `${answered} / ${total} risposte`;
+}
+
+function quizToggleCheckbox(questionId, value) {
+  let current = Array.isArray(_qs.answers[questionId]) ? _qs.answers[questionId] : [];
+  if (current.includes(value)) current = current.filter(v => v !== value);
+  else current.push(value);
+  _qs.answers[questionId] = current;
+  api('PATCH', `/student/quizzes/${_qs.quizId}/autosave`,
+    { answers: { [questionId]: current }, force: false }, 'student').catch(() => {});
+  renderQuizStudentBody();
+}
+
+function startQuizTimer(endTime) {
+  const timerEl = document.getElementById('qs-timer');
+  timerEl.classList.add('show');
+  clearInterval(_qs.timerInterval);
+  _qs.timerInterval = setInterval(() => {
+    const remaining = Math.max(0, endTime - Date.now());
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    timerEl.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (remaining <= 60000) timerEl.style.background = '#A63228', timerEl.style.color = 'white';
+    if (remaining === 0) { clearInterval(_qs.timerInterval); submitQuiz(true); }
+  }, 1000);
+}
+
+async function submitQuiz(force = false) {
+  if (!force) {
+    const qs = _currentQuiz?.questions || [];
+    const required = qs.filter(q => q.required);
+    const missing = required.filter(q => {
+      const a = _qs.answers[q.id];
+      return !a || (Array.isArray(a) && !a.length);
+    });
+    if (missing.length && !confirm(`Hai ${missing.length} domande obbligatorie senza risposta. Inviare comunque?`)) return;
+  }
+  clearInterval(_qs.timerInterval);
+  showLoading('Invio…');
+  try {
+    await api('POST', `/student/quizzes/${_qs.quizId}/submit`,
+      { answers: _qs.answers, force }, 'student');
+    document.getElementById('modal-quiz-student').style.display = 'none';
+    showToast('✅ Risposte inviate! Riceverai una conferma via email.');
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+function confirmCloseQuiz() {
+  if (confirm('Vuoi uscire? Le risposte sono salvate automaticamente.')) {
+    clearInterval(_qs.timerInterval);
+    document.getElementById('modal-quiz-student').style.display = 'none';
+  }
+}
+
+// Banner quiz attivo per studente
+async function checkStudentQuizzes() {
+  if (!currentUser || !studentToken) return;
+  try {
+    const quizzes = await api('GET', '/student/quizzes/available', null, 'student');
+    const pending = quizzes.filter(q => !q.alreadySubmitted);
+    if (!pending.length) return;
+    const el = document.getElementById('actions-greeting');
+    // Aggiunge banner sotto il titolo
+    let banner = document.getElementById('quiz-available-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'quiz-available-banner';
+      banner.style.cssText = 'background:linear-gradient(135deg,#EAF5EE,#D4EDDA);border:2px solid var(--green);border-radius:12px;padding:12px 16px;margin-bottom:.8rem;width:100%;max-width:480px;font-size:.88rem';
+      el.parentNode.insertBefore(banner, el.nextSibling);
+    }
+    banner.innerHTML = `<strong style="color:var(--green)">📝 Hai ${pending.length} quiz/form da compilare!</strong><br>` +
+      pending.map(q => `<div style="margin-top:.4rem">
+        <span style="color:var(--ink)">${q.title}</span>
+        ${q.timerMinutes?`<span style="color:var(--brown-light);font-size:.78rem"> · ⏱ ${q.timerMinutes} min</span>`:''}
+        <button class="btn-sm btn-sm-welcome" onclick="openStudentQuiz('${q.id}')" style="margin-left:.5rem">Inizia →</button>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ── Dark mode ─────────────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('biblioteca_dark', isDark ? '1' : '0');
+  document.getElementById('dark-toggle').textContent = isDark ? '☀️' : '🌙';
+}
+
+// ── Font OpenDyslexic ─────────────────────────────────────────────────────────
+function toggleDyslexic() {
+  const active = document.body.classList.toggle('dyslexic');
+  localStorage.setItem('biblioteca_dyslexic', active ? '1' : '0');
+  document.getElementById('acc-toggle-dyslexic').classList.toggle('active', active);
+}
+
+// ── Testo grande ──────────────────────────────────────────────────────────────
+function toggleLargeText() {
+  const active = document.body.classList.toggle('large-text');
+  localStorage.setItem('biblioteca_large_text', active ? '1' : '0');
+  document.getElementById('acc-toggle-large').classList.toggle('active', active);
+}
+
+// ── Inizializza tutte le preferenze di accessibilità ─────────────────────────
+function initAccessibility() {
+  // Dark mode
+  if (localStorage.getItem('biblioteca_dark') === '1') {
+    document.body.classList.add('dark');
+    document.getElementById('dark-toggle').textContent = '☀️';
+  }
+  // OpenDyslexic
+  if (localStorage.getItem('biblioteca_dyslexic') === '1') {
+    document.body.classList.add('dyslexic');
+    document.getElementById('acc-toggle-dyslexic').classList.add('active');
+  }
+  // Testo grande
+  if (localStorage.getItem('biblioteca_large_text') === '1') {
+    document.body.classList.add('large-text');
+    document.getElementById('acc-toggle-large').classList.add('active');
+  }
+}
+
+// ── X3: Log accessi ───────────────────────────────────────────────────────────
+const LOG_ACTION_LABELS = {
+  login:       { icon: '🔑', label: 'Login' },
+  logout:      { icon: '🚪', label: 'Logout' },
+  take_book:   { icon: '📤', label: 'Prestito' },
+  return_book: { icon: '📥', label: 'Restituzione' },
+};
+const LOG_TYPE_COLORS = {
+  admin:   { bg:'#EDE5D4', color:'#5C3D2E' },
+  teacher: { bg:'#FFF8E1', color:'#7a5c00' },
+  student: { bg:'#EAF5EE', color:'#2E6B45' },
+};
+
+async function loadAccessLogs() {
+  const userType = document.getElementById('log-type-filter').value;
+  const days     = document.getElementById('log-days-filter').value;
+  const wrap     = document.getElementById('logs-table-wrap');
+  wrap.innerHTML = '<div style="color:var(--brown-light);font-size:.9rem">Caricamento…</div>';
+  try {
+    const params = new URLSearchParams({ days });
+    if (userType) params.set('user_type', userType);
+    const logs = await api('GET', `/admin/access-logs?${params}`, null, 'admin');
+    if (!logs.length) {
+      wrap.innerHTML = '<div style="color:var(--brown-light);font-size:.9rem;padding:1rem">Nessun accesso trovato.</div>';
+      return;
+    }
+    wrap.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead><tr style="background:var(--brown);color:var(--gold-light);text-align:left">
+        <th style="padding:8px 12px">Data/ora</th>
+        <th style="padding:8px 12px">Tipo</th>
+        <th style="padding:8px 12px">Utente</th>
+        <th style="padding:8px 12px">Azione</th>
+        <th style="padding:8px 12px">Dettaglio</th>
+        <th style="padding:8px 12px">IP</th>
+      </tr></thead>
+      <tbody>
+      ${logs.map((l, i) => {
+        const act = LOG_ACTION_LABELS[l.action] || { icon: '•', label: l.action };
+        const tc  = LOG_TYPE_COLORS[l.userType] || { bg:'#f5f5f5', color:'#333' };
+        const dt  = new Date(l.createdAt).toLocaleString('it-IT');
+        return `<tr style="border-bottom:1px solid var(--warm);background:${i%2===0?'transparent':'rgba(245,240,232,.4)'}">
+          <td style="padding:7px 12px;white-space:nowrap;color:var(--brown-light)">${dt}</td>
+          <td style="padding:7px 12px"><span style="background:${tc.bg};color:${tc.color};padding:2px 8px;border-radius:8px;font-weight:700;font-size:.75rem">${l.userType}</span></td>
+          <td style="padding:7px 12px;font-weight:600;color:var(--ink)">${l.userName}</td>
+          <td style="padding:7px 12px">${act.icon} ${act.label}</td>
+          <td style="padding:7px 12px;color:var(--brown-light)">${l.detail||'—'}</td>
+          <td style="padding:7px 12px;color:var(--brown-light);font-size:.75rem">${l.ip||'—'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+    <div style="font-size:.78rem;color:var(--brown-light);margin-top:.6rem;text-align:right">
+      ${logs.length} record · log conservati 30 giorni
+    </div>`;
+  } catch(e) { wrap.innerHTML = `<div style="color:var(--red)">❌ ${e.message}</div>`; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// MAP1/MAP2 — Mappa biblioteca
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _mapTool   = 'add';
+let _mapShelves = [];
+let _mapCols   = 8;
+let _mapRows   = 6;
+let _mapLoaded = false;
+
+const SHELF_COLORS = [
+  '#5C3D2E','#2E6B45','#7a5c00','#A63228','#3D5C8B','#6B2E6B','#2E6B6B','#5C5C2E'
+];
+
+function setMapTool(tool) {
+  _mapTool = tool;
+  document.getElementById('map-tool-add').classList.toggle('active', tool === 'add');
+  document.getElementById('map-tool-erase').classList.toggle('active', tool === 'erase');
+}
+
+function resizeMapGrid() {
+  _mapCols = parseInt(document.getElementById('map-cols-select').value);
+  _mapRows = parseInt(document.getElementById('map-rows-select').value);
+  renderMapGrid();
+}
+
+async function loadLibraryMap() {
+  if (_mapLoaded) { renderMapGrid(); return; }
+  try {
+    const data = await api('GET', '/library-map', null, 'admin');
+    const parsed = JSON.parse(data.mapData || '{}');
+    _mapShelves = parsed.shelves || [];
+    _mapCols    = parsed.cols || 8;
+    _mapRows    = parsed.rows || 6;
+    document.getElementById('map-cols-select').value = String(_mapCols);
+    document.getElementById('map-rows-select').value = String(_mapRows);
+    _mapLoaded = true;
+  } catch(e) {}
+  renderMapGrid();
+}
+
+function renderMapGrid() {
+  const grid = document.getElementById('map-grid-container');
+  if (!grid) return;
+  grid.className = 'map-grid';
+  grid.style.gridTemplateColumns = `repeat(${_mapCols}, 52px)`;
+  let html = '';
+  for (let r = 0; r < _mapRows; r++) {
+    for (let c = 0; c < _mapCols; c++) {
+      const shelf = _mapShelves.find(s => s.row === r && s.col === c);
+      if (shelf) {
+        html += `<div class="map-cell has-shelf" style="background:${shelf.color}"
+          onclick="mapCellClick(${r},${c})" title="Scaffale: ${shelf.name}">
+          📚<div class="shelf-label">${shelf.name}</div></div>`;
+      } else {
+        html += `<div class="map-cell" onclick="mapCellClick(${r},${c})"></div>`;
+      }
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function mapCellClick(row, col) {
+  if (_mapTool === 'erase') {
+    _mapShelves = _mapShelves.filter(s => !(s.row === row && s.col === col));
+    renderMapGrid(); return;
+  }
+  const existing = _mapShelves.find(s => s.row === row && s.col === col);
+  const name = prompt(existing
+    ? `Rinomina scaffale "${existing.name}":` : 'Nome scaffale (es. 1, 2A, B):', existing?.name || '');
+  if (!name) return;
+  if (existing) { existing.name = name.trim().toUpperCase(); }
+  else {
+    _mapShelves.push({ id:`s_${row}_${col}`, name: name.trim().toUpperCase(),
+      row, col, color: SHELF_COLORS[_mapShelves.length % SHELF_COLORS.length] });
+  }
+  renderMapGrid();
+}
+
+async function saveLibraryMap() {
+  showLoading('Salvataggio…');
+  try {
+    await api('POST', '/library-map', {
+      map_data: { shelves: _mapShelves, cols: _mapCols, rows: _mapRows }
+    }, 'admin');
+    showToast('✅ Mappa salvata!');
+    _studentMapData = null; // Forza reload per studenti
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+// ── MAP2: Visualizzazione mappa lato studente ─────────────────────────────────
+let _studentMapData = null;
+
+async function loadStudentMap() {
+  if (_studentMapData) return;
+  try {
+    const r = await fetch(`${API_BASE}/library-map`);
+    const data = await r.json();
+    _studentMapData = JSON.parse(data.mapData || '{}');
+  } catch(e) { _studentMapData = { shelves:[], cols:8, rows:6 }; }
+}
+
+async function renderBookMap(bookLocation) {
+  const mapEl  = document.getElementById('bp-map');
+  const gridEl = document.getElementById('bp-map-grid');
+  const lblEl  = document.getElementById('bp-map-label');
+  if (!mapEl) return;
+  mapEl.style.display = 'none';
+  if (!bookLocation) return;
+  await loadStudentMap();
+  const { shelves=[], cols=8, rows=6 } = _studentMapData;
+  if (!shelves.length) return;
+  const locPart = bookLocation.trim().toUpperCase().split(/[\.\-\/\s]/)[0];
+  const target  = shelves.find(s =>
+    s.name.toUpperCase() === locPart ||
+    s.name.toUpperCase() === bookLocation.trim().toUpperCase()
+  );
+  if (!target) return;
+  gridEl.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const s = shelves.find(s => s.row === r && s.col === c);
+      if (s) {
+        const isHit = s.id === target.id;
+        html += `<div class="student-map-cell${isHit?' highlighted':''}" style="background:${s.color}">
+          ${isHit?'📍':'📚'}<br>${s.name}</div>`;
+      } else {
+        html += `<div class="student-map-cell empty" style="background:rgba(0,0,0,.05)"></div>`;
+      }
+    }
+  }
+  gridEl.innerHTML = html;
+  lblEl.textContent = `📍 Scaffale ${target.name} — posizione ${bookLocation}`;
+  mapEl.style.display = 'block';
+}
+
+// TIME1 — Calendario prestiti
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _loansCalView = 'month';
+let _loansCalYear = new Date().getFullYear();
+let _loansCalMonth = new Date().getMonth();
+let _teacherCalView = 'month';
+let _teacherCalYear = new Date().getFullYear();
+let _teacherCalMonth = new Date().getMonth();
+
+const MONTHS_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                   'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const DAYS_IT   = ['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+
+// Calcola colore del dot in base alla scadenza
+function _loanDotClass(dueDateStr) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const due = new Date(dueDateStr); due.setHours(0,0,0,0);
+  const diff = Math.ceil((due - now) / 86400000);
+  if (diff < 0) return 'red';
+  if (diff <= 2) return 'orange';
+  return 'green';
+}
+
+// ── Calendario admin ──────────────────────────────────────────────────────────
+function setLoansCalView(view) {
+  _loansCalView = view;
+  ['month','week','list'].forEach(v => {
+    const btn = document.getElementById(`cal-btn-${v}`);
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+  renderLoansCalendar();
+}
+
+function loansCalPrev() {
+  if (_loansCalView === 'week') { _loansCalMonth -= 0; _loansCalYear = new Date(_loansCalYear, _loansCalMonth, -6).getFullYear(); _loansCalMonth = new Date(_loansCalYear, _loansCalMonth, -6).getMonth(); }
+  else { _loansCalMonth--; if (_loansCalMonth < 0) { _loansCalMonth = 11; _loansCalYear--; } }
+  renderLoansCalendar();
+}
+
+function loansCalNext() {
+  if (_loansCalView === 'week') { _loansCalMonth += 0; const nd = new Date(_loansCalYear, _loansCalMonth, new Date().getDate() + 7); _loansCalYear = nd.getFullYear(); _loansCalMonth = nd.getMonth(); }
+  else { _loansCalMonth++; if (_loansCalMonth > 11) { _loansCalMonth = 0; _loansCalYear++; } }
+  renderLoansCalendar();
+}
+
+function renderLoansCalendar() {
+  const el = document.getElementById('loans-cal-body');
+  const lbl = document.getElementById('loans-cal-label');
+  if (!el) return;
+  const loans = (_loans || []).filter(l => !l.returned);
+  if (_loansCalView === 'list') {
+    lbl.textContent = 'Tutti i prestiti attivi';
+    el.innerHTML = '';
+    return; // La lista normale sotto gestisce già questo
+  }
+  if (_loansCalView === 'month') {
+    lbl.textContent = `${MONTHS_IT[_loansCalMonth]} ${_loansCalYear}`;
+    el.innerHTML = _buildMonthGrid(_loansCalYear, _loansCalMonth, loans, 'dueDate');
+  } else {
+    const now = new Date(_loansCalYear, _loansCalMonth, new Date().getDate());
+    lbl.textContent = `Settimana del ${now.toLocaleDateString('it-IT',{day:'numeric',month:'short'})}`;
+    el.innerHTML = _buildWeekGrid(now, loans, 'dueDate');
+  }
+}
+
+function _buildMonthGrid(year, month, items, dateField) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(year, month, 1);
+  let startDow = firstDay.getDay() - 1; if (startDow < 0) startDow = 6;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  let html = DAYS_IT.map(d => `<div class="loans-day-hdr">${d}</div>`).join('');
+  // Celle del mese precedente
+  for (let i = startDow - 1; i >= 0; i--) {
+    html += `<div class="loans-day-cell other-month"><div class="loans-day-num">${prevDays - i}</div></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cellDate = new Date(year, month, d); cellDate.setHours(0,0,0,0);
+    const isToday  = cellDate.toDateString() === today.toDateString();
+    const dayItems = items.filter(l => {
+      const ld = new Date(l[dateField]); ld.setHours(0,0,0,0);
+      return ld.toDateString() === cellDate.toDateString();
+    });
+    const dots = dayItems.slice(0, 3).map(l =>
+      `<div class="loans-dot ${_loanDotClass(l[dateField])}" title="${l.user}: ${l.bookTitle}">${l.user.split(' ')[0]}</div>`
+    ).join('') + (dayItems.length > 3 ? `<div class="loans-dot green">+${dayItems.length-3}</div>` : '');
+    html += `<div class="loans-day-cell${isToday?' today':''}">
+      <div class="loans-day-num">${d}</div>${dots}
+    </div>`;
+  }
+  // Celle mese successivo
+  const total = startDow + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++)
+    html += `<div class="loans-day-cell other-month"><div class="loans-day-num">${d}</div></div>`;
+
+  return `<div class="loans-month-grid">${html}</div>
+    <div style="display:flex;gap:.8rem;font-size:.75rem;margin-top:.4rem;flex-wrap:wrap">
+      <span><span class="loans-dot green" style="display:inline-block;padding:2px 8px">●</span> In tempo</span>
+      <span><span class="loans-dot orange" style="display:inline-block;padding:2px 8px">●</span> Scade presto</span>
+      <span><span class="loans-dot red" style="display:inline-block;padding:2px 8px">●</span> Scaduto</span>
+    </div>`;
+}
+
+function _buildWeekGrid(startDate, items, dateField) {
+  const days = [];
+  const start = new Date(startDate);
+  // Trova lunedì della settimana corrente
+  const dow = start.getDay() === 0 ? 6 : start.getDay() - 1;
+  start.setDate(start.getDate() - dow);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    days.push(d);
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  let html = '<div class="loans-week-grid">';
+  html += '<div class="loans-week-label"></div>';
+  html += days.map(d => `<div class="loans-week-hdr">${DAYS_IT[d.getDay()===0?6:d.getDay()-1]}<br>${d.getDate()}/${d.getMonth()+1}</div>`).join('');
+  // Raccoglie tutti gli utenti con prestiti nella settimana
+  const users = [...new Set(items.filter(l => {
+    const ld = new Date(l[dateField]); ld.setHours(0,0,0,0);
+    return days.some(d => d.toDateString() === ld.toDateString());
+  }).map(l => l.user))];
+  if (!users.length) {
+    html += `<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--brown-light);font-size:.85rem">Nessuna scadenza in questa settimana.</div>`;
+  } else {
+    users.forEach(user => {
+      html += `<div class="loans-week-label" title="${user}">${user.split(' ')[0]}</div>`;
+      days.forEach(d => {
+        const loan = items.find(l => {
+          const ld = new Date(l[dateField]); ld.setHours(0,0,0,0);
+          return l.user === user && ld.toDateString() === d.toDateString();
+        });
+        html += `<div class="loans-week-cell">${loan
+          ? `<div class="loans-dot ${_loanDotClass(loan[dateField])}" title="${loan.bookTitle}">${loan.bookTitle.slice(0,10)}…</div>`
+          : ''}</div>`;
+      });
+    });
+  }
+  html += '</div>';
+  return html;
+}
+
+// ── Calendario professore ─────────────────────────────────────────────────────
+function setTeacherCalView(view) {
+  _teacherCalView = view;
+  ['month','week'].forEach(v => {
+    const btn = document.getElementById(`tcal-btn-${v}`);
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+  renderTeacherCalendar();
+}
+
+function teacherCalPrev() {
+  _teacherCalMonth--;
+  if (_teacherCalMonth < 0) { _teacherCalMonth = 11; _teacherCalYear--; }
+  renderTeacherCalendar();
+}
+
+function teacherCalNext() {
+  _teacherCalMonth++;
+  if (_teacherCalMonth > 11) { _teacherCalMonth = 0; _teacherCalYear++; }
+  renderTeacherCalendar();
+}
+
+function renderTeacherCalendar() {
+  const el  = document.getElementById('teacher-cal-body');
+  const lbl = document.getElementById('teacher-cal-label');
+  if (!el) return;
+  // Usa i dati in ritardo già caricati
+  const loans = (_teacherOverdue || []).map(o => ({
+    user: o.studentName, bookTitle: o.bookTitle, dueDate: o.dueDate,
+  }));
+  if (_teacherCalView === 'month') {
+    lbl.textContent = `${MONTHS_IT[_teacherCalMonth]} ${_teacherCalYear}`;
+    el.innerHTML = _buildMonthGrid(_teacherCalYear, _teacherCalMonth, loans, 'dueDate');
+  } else {
+    const now = new Date(_teacherCalYear, _teacherCalMonth, new Date().getDate());
+    lbl.textContent = `Sett. ${now.toLocaleDateString('it-IT',{day:'numeric',month:'short'})}`;
+    el.innerHTML = _buildWeekGrid(now, loans, 'dueDate');
+  }
+}
+
+// ── C2: Prenotazione anticipata con calendario ────────────────────────────────
+let _calYear = 0, _calMonth = 0, _calSelectedDate = null, _resBookId = null;
+const CAL_DAYS = ['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+const CAL_MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                    'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+function openReservationModal(bookId, bookTitle) {
+  _resBookId = bookId;
+  _calSelectedDate = null;
+  const now = new Date();
+  _calYear  = now.getFullYear();
+  _calMonth = now.getMonth();
+  document.getElementById('res-book-title').textContent = bookTitle;
+  document.getElementById('cal-selected-date').textContent = '';
+  document.getElementById('res-confirm-btn').disabled = true;
+  document.getElementById('res-confirm-btn').style.opacity = '.5';
+  renderCalendar();
+  openModal('modal-reservation');
+}
+
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent =
+    `${CAL_MONTHS[_calMonth]} ${_calYear}`;
+  const grid   = document.getElementById('cal-grid');
+  const today  = new Date();
+  today.setHours(0,0,0,0);
+  const firstDay = new Date(_calYear, _calMonth, 1);
+  // Lunedì = 0 in italiano
+  let startDow = firstDay.getDay() - 1;
+  if (startDow < 0) startDow = 6;
+  const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+
+  let html = CAL_DAYS.map(d =>
+    `<div class="cal-day-name">${d}</div>`).join('');
+
+  // Celle vuote prima del primo giorno
+  for (let i = 0; i < startDow; i++)
+    html += `<div class="cal-day empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(_calYear, _calMonth, d);
+    date.setHours(0,0,0,0);
+    const isPast = date <= today;
+    const isSelected = _calSelectedDate &&
+      date.toDateString() === _calSelectedDate.toDateString();
+    const isToday = date.toDateString() === today.toDateString();
+    const cls = [
+      'cal-day',
+      isPast ? 'disabled' : '',
+      isSelected ? 'selected' : '',
+      isToday ? 'today' : '',
+    ].filter(Boolean).join(' ');
+    const iso = date.toISOString().slice(0,10);
+    html += `<div class="${cls}" ${!isPast ? `onclick="selectCalDay('${iso}',this)"` : ''}>${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function selectCalDay(isoDate, el) {
+  _calSelectedDate = new Date(isoDate);
+  document.querySelectorAll('.cal-day.selected').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  const fmt = _calSelectedDate.toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('cal-selected-date').textContent = `📅 Selezionato: ${fmt}`;
+  const btn = document.getElementById('res-confirm-btn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+
+function calPrev() {
+  _calMonth--;
+  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  renderCalendar();
+}
+
+function calNext() {
+  _calMonth++;
+  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  renderCalendar();
+}
+
+async function confirmReservation() {
+  if (!_calSelectedDate || !_resBookId) return;
+  showLoading('Prenotazione…');
+  try {
+    await api('POST', '/student/reservations', {
+      book_id: _resBookId,
+      reserved_date: _calSelectedDate.toISOString().slice(0,10),
+    }, 'student');
+    closeModal('modal-reservation');
+    const fmt = _calSelectedDate.toLocaleDateString('it-IT', { day:'numeric', month:'long' });
+    showToast(`✅ Libro prenotato per il ${fmt}!`);
+    // Aggiorna la lista libri
+    await refreshMyLoans();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+// ── C3: Auto-complete Google Books nel form aggiungi libro ────────────────────
+let _acTimer = null;
+
+function onBookTitleInput(val) {
+  clearTimeout(_acTimer);
+  if (val.length < 3) { closeAcDropdown(); return; }
+  _acTimer = setTimeout(() => fetchGoogleBooksAc(val), 400);
+}
+
+async function fetchGoogleBooksAc(query) {
+  try {
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=it&maxResults=5&fields=items(volumeInfo(title,authors,publisher,industryIdentifiers,imageLinks))`;
+    const r   = await fetch(url);
+    const data = await r.json();
+    if (!data.items?.length) { closeAcDropdown(); return; }
+    renderAcDropdown(data.items);
+  } catch(e) { closeAcDropdown(); }
+}
+
+function renderAcDropdown(items) {
+  const dd = document.getElementById('ac-dropdown');
+  dd.innerHTML = items.map((item, i) => {
+    const v   = item.volumeInfo || {};
+    const title  = v.title || '';
+    const author = (v.authors || []).join(', ');
+    const thumb  = v.imageLinks?.smallThumbnail || '';
+    return `<div class="ac-item" onmousedown="selectAcItem(${i})">
+      ${thumb
+        ? `<img src="${thumb}" alt="" onerror="this.outerHTML='<div class=ac-item-no-cover>📖</div>'"/>`
+        : '<div class="ac-item-no-cover">📖</div>'}
+      <div>
+        <div class="ac-title">${title}</div>
+        <div class="ac-author">${author}</div>
+      </div>
+    </div>`;
+  }).join('');
+  dd.dataset.items = JSON.stringify(items.map(item => {
+    const v = item.volumeInfo || {};
+    const isbn = (v.industryIdentifiers || []).find(x => x.type === 'ISBN_13')?.identifier
+               || (v.industryIdentifiers || []).find(x => x.type === 'ISBN_10')?.identifier
+               || '';
+    return {
+      title:     v.title || '',
+      author:    (v.authors || []).join(', '),
+      publisher: v.publisher || '',
+      isbn,
+      coverUrl:  v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '',
+    };
+  }));
+  dd.classList.add('open');
+}
+
+function selectAcItem(index) {
+  const dd    = document.getElementById('ac-dropdown');
+  const items = JSON.parse(dd.dataset.items || '[]');
+  const item  = items[index];
+  if (!item) return;
+  document.getElementById('a-title').value     = item.title;
+  document.getElementById('a-author').value    = item.author;
+  document.getElementById('a-publisher').value = item.publisher;
+  document.getElementById('a-isbn').value      = item.isbn;
+  // Salva la copertina trovata in un campo hidden per usarla in addBook()
+  document.getElementById('a-title').dataset.coverUrl = item.coverUrl;
+  closeAcDropdown();
+  showToast('✅ Dati compilati da Google Books');
+}
+
+function closeAcDropdown() {
+  const dd = document.getElementById('ac-dropdown');
+  if (dd) dd.classList.remove('open');
+}
+
+// ── SOC2: Passa il libro ──────────────────────────────────────────────────────
+let _pendingPassBook = null;
+let _allStudentsForPass = [];
+
+function _maybeOpenPassBook() {
+  if (_pendingPassBook) {
+    openPassBookModal(_pendingPassBook.id, _pendingPassBook.title);
+    _pendingPassBook = null;
+  } else {
+    goReturn();
+  }
+}
+
+async function openPassBookModal(bookId, bookTitle) {
+  document.getElementById('pass-book-title').textContent = bookTitle;
+  document.getElementById('pass-search-input').value = '';
+  document.getElementById('pass-students-list').innerHTML =
+    '<div style="padding:.8rem;font-size:.85rem;color:var(--brown-light)">Caricamento…</div>';
+  openModal('modal-pass-book');
+  try {
+    // Carica tutti gli studenti (escluso se stesso)
+    const data = await api('GET', '/students', null, 'admin').catch(() => null);
+    if (data) {
+      _allStudentsForPass = data.filter(s => s.fullName !== currentUser && s.active);
+    } else {
+      // Fallback: usa studenti della stessa classe dal profilo
+      _allStudentsForPass = [];
+    }
+    filterPassStudents();
+  } catch(e) {
+    document.getElementById('pass-students-list').innerHTML =
+      '<div style="padding:.8rem;font-size:.85rem;color:var(--brown-light)">Caricamento non disponibile</div>';
+  }
+  // Salva bookId per l'invio
+  document.getElementById('modal-pass-book').dataset.bookId = bookId;
+  document.getElementById('modal-pass-book').dataset.bookTitle = bookTitle;
+}
+
+function filterPassStudents() {
+  const q = document.getElementById('pass-search-input').value.toLowerCase().trim();
+  const list = document.getElementById('pass-students-list');
+  const filtered = q
+    ? _allStudentsForPass.filter(s => s.fullName.toLowerCase().includes(q))
+    : _allStudentsForPass.slice(0, 10);
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:.8rem;font-size:.85rem;color:var(--brown-light)">Nessun risultato</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(s => `
+    <div onclick="sendPassBook('${s.fullName.replace(/'/g,"\\'")}','${s.className||''}')"
+         style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:.6rem;
+                border-bottom:1px solid var(--warm);transition:background .15s"
+         onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"
+    >
+      <span style="font-size:1.1rem">👤</span>
+      <div>
+        <div style="font-weight:600;font-size:.88rem;color:var(--ink)">${s.fullName}</div>
+        <div style="font-size:.75rem;color:var(--brown-light)">${s.className||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function sendPassBook(recipientName, recipientClass) {
+  const modal = document.getElementById('modal-pass-book');
+  const bookTitle = modal.dataset.bookTitle;
+  showLoading('Invio consiglio…');
+  try {
+    await api('POST', '/student/pass-book', {
+      recipient_name: recipientName,
+      book_title: bookTitle,
+      sender_name: currentUser,
+    }, 'student');
+    closeModal('modal-pass-book');
+    showToast(`📚 Consiglio inviato a ${recipientName}!`);
+    goReturn();
+  } catch(e) { showToast('❌ '+e.message); }
+  finally { hideLoading(); }
+}
+
+// ── X universale nei modal ────────────────────────────────────────────────────
+// Invece di modificare ogni modal, iniettiamo la X dinamicamente al caricamento.
+// I modal con X già presente (quiz-builder, modal-teacher-email) vengono saltati.
+(function addModalXButtons() {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      const modal = overlay.querySelector('.modal');
+      if (!modal) return;
+      // Salta se ha già una X
+      if (modal.querySelector('.modal-x')) return;
+      // Trova il closeModal o funzione da chiamare
+      const cancelBtn = modal.querySelector('.btn-cancel');
+      const onclose = cancelBtn ? cancelBtn.getAttribute('onclick') : null;
+      const xBtn = document.createElement('button');
+      xBtn.className = 'modal-x';
+      xBtn.textContent = '✕';
+      xBtn.title = 'Chiudi';
+      if (onclose) xBtn.setAttribute('onclick', onclose);
+      else xBtn.onclick = () => overlay.classList.remove('active');
+      modal.insertBefore(xBtn, modal.firstChild);
+      // Nasconde il btn-cancel ridondante (mantiene solo se ha testo diverso da Chiudi/Annulla)
+      if (cancelBtn) {
+        const txt = cancelBtn.textContent.trim();
+        if (['Chiudi','Annulla','Close','Cancel'].includes(txt)) {
+          cancelBtn.style.display = 'none';
+        }
+      }
+    });
+  });
+})();
 
 // ── L2: Badge lingua libro ────────────────────────────────────────────────────
 const LANG_FLAGS = {
@@ -4949,6 +7057,7 @@ if (_pendingResetToken) {
   document.getElementById('new-pwd-error').style.display = 'none';
 }
 
+initAccessibility();
 init();
 
 // ── PWA: registra il service worker (icona in home, apertura standalone) ───────
