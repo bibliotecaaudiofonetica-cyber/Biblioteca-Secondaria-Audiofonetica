@@ -522,6 +522,10 @@ class AccessLog(Base):
             "ip":        self.ip_address,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class Quiz(Base):
+    """Quiz/questionario creato da un professore."""
     __tablename__ = "quizzes"
 
     id             = Column(String, primary_key=True, default=new_id)
