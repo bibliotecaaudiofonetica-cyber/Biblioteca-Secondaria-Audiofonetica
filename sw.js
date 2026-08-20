@@ -1,21 +1,10 @@
 // Service worker minimale: serve solo a rendere l'app installabile
-// (icona in home, apertura a schermo intero) e a garantire un minimo
-// di funzionamento offline per la sola shell statica. NON mette in
-// cache le chiamate API (dati libri/prestiti/alunni): quelle vanno
-// sempre e solo in rete, altrimenti si rischierebbe di mostrare dati
-// vecchi/sbagliati.
-//
-// Strategia "network-first": si prova sempre a scaricare la versione
-// più recente dalla rete; solo se la rete non risponde (offline) si
-// usa la copia salvata in cache. Così, appena pubblichi un nuovo
-// index.html sul server, gli utenti lo vedono al primo caricamento
-// successivo, senza restare bloccati su una versione vecchia in cache.
-//
-// IMPORTANTE: cambia CACHE_NAME (es. v2 -> v3) ogni volta che vuoi
-// forzare l'invalidazione totale delle cache vecchie sui dispositivi
-// degli utenti (utile la prima volta dopo aver introdotto questo fix,
-// per ripulire le cache "v1" bloccate sulla strategia precedente).
-const CACHE_NAME = 'biblioteca-shell-v2';
+// (icona in home, apertura a schermo intero) e a velocizzare i
+// caricamenti successivi della pagina statica. NON mette in cache le
+// chiamate API (dati libri/prestiti/alunni): quelle vanno sempre e solo
+// in rete, altrimenti si rischierebbe di mostrare dati vecchi/sbagliati.
+
+const CACHE_NAME = 'biblioteca-shell-v1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -52,19 +41,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Rete disponibile: usa sempre la risposta fresca e aggiorna
-        // la cache per il fallback offline.
-        if (response && response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() =>
-        // Offline: usa la copia in cache se esiste.
-        caches.match(event.request)
-      )
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached); // offline: usa la copia in cache se c'è
+      return cached || network;
+    })
   );
 });

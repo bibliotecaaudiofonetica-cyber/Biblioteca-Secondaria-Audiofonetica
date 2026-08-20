@@ -48,6 +48,7 @@ def _run_migrations():
             "ALTER TABLE books ADD COLUMN IF NOT EXISTS cover_url TEXT",
             "ALTER TABLE books ADD COLUMN IF NOT EXISTS openlibrary_checked BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE books ADD COLUMN IF NOT EXISTS isbn TEXT",
+            "ALTER TABLE books ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'it'",
             "ALTER TABLE students ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT ''",
             "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT",
             "ALTER TABLE students ADD COLUMN IF NOT EXISTS class_id TEXT",
@@ -108,6 +109,7 @@ def _run_migrations():
             "ALTER TABLE books ADD COLUMN cover_url TEXT",
             "ALTER TABLE books ADD COLUMN openlibrary_checked INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE books ADD COLUMN isbn TEXT",
+            "ALTER TABLE books ADD COLUMN language TEXT DEFAULT 'it'",
             "ALTER TABLE students ADD COLUMN notes TEXT DEFAULT ''",
             "ALTER TABLE students ADD COLUMN email TEXT",
             "ALTER TABLE students ADD COLUMN class_id TEXT",
@@ -175,7 +177,18 @@ def _run_migrations():
             ))
             conn.commit()
     except Exception:
-        pass  # tabella vuota o altra incompatibilità minore, non bloccante
+        pass
+
+    # Backfill: teacher_alert_stage può essere NULL sui prestiti vecchi
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(
+                "UPDATE loans SET teacher_alert_stage = 0 "
+                "WHERE teacher_alert_stage IS NULL"
+            ))
+            conn.commit()
+    except Exception:
+        pass
 
 _run_migrations()
 

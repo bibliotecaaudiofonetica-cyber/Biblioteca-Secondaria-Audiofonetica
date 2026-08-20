@@ -896,6 +896,20 @@
         <div><label>Editore</label><input type="text" id="a-publisher" placeholder="Casa editrice"/></div>
         <div><label>Posizione *</label><input type="text" id="a-location" placeholder="Es. 6.L"/></div>
         <div class="span2"><label>Genere letterario</label><input type="text" id="a-genre" placeholder="Es. romanzo storico / avventura"/></div>
+        <div><label>Lingua</label>
+          <select id="a-language" style="width:100%;padding:10px 12px;border:2px solid var(--warm);border-radius:8px;font-family:'Poppins',sans-serif;font-size:.9rem;outline:none">
+            <option value="it" selected>🇮🇹 Italiano</option>
+            <option value="en">🇬🇧 Inglese</option>
+            <option value="fr">🇫🇷 Francese</option>
+            <option value="de">🇩🇪 Tedesco</option>
+            <option value="es">🇪🇸 Spagnolo</option>
+            <option value="pt">🇵🇹 Portoghese</option>
+            <option value="ar">🇸🇦 Arabo</option>
+            <option value="zh">🇨🇳 Cinese</option>
+            <option value="ja">🇯🇵 Giapponese</option>
+            <option value="ru">🇷🇺 Russo</option>
+          </select>
+        </div>
         <div class="full"><button class="btn-add" onclick="addBook()">+ Aggiungi libro</button></div>
       </div>
       <div style="margin-bottom:.8rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
@@ -3066,52 +3080,76 @@ async function openBookPreview(bookId) {
   // Mostra mappa posizione libro
   renderBookMap(book.location);
 
-  // Fetch sinossi da Google Books (migliore supporto italiano).
-  // Se il libro ha l'ISBN, si cerca per ISBN (più preciso); altrimenti (o se
-  // la ricerca per ISBN non trova nulla) si fa un fallback per titolo+autore.
+  // Fetch sinossi da Google Books — senza langRestrict per avere più risultati
+  const _showSynopsis = (data) => {
+    const item = data.items?.[0];
+    const desc = item?.volumeInfo?.description;
+    if (desc) {
+      synEl.textContent = desc.length > 500 ? desc.substring(0, 497) + '…' : desc;
+      synEl.style.display = 'block';
+      return true;
+    }
+    return false;
+  };
+
   const fetchSynopsisByTitleAuthor = () => {
     const q = encodeURIComponent(`intitle:${book.title} inauthor:${book.author}`);
-    fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&langRestrict=it&maxResults=1`)
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3`)
       .then(r => r.json())
       .then(data => {
-        const item = data.items?.[0];
-        const desc = item?.volumeInfo?.description;
-        if (desc) {
-          synEl.textContent = desc.length > 400 ? desc.substring(0, 397) + '…' : desc;
-          synEl.style.display = 'block';
+        if (!_showSynopsis(data)) {
+          // Ultimo tentativo: solo titolo
+          const q2 = encodeURIComponent(book.title);
+          fetch(`https://www.googleapis.com/books/v1/volumes?q=${q2}&maxResults=3`)
+            .then(r2 => r2.json())
+            .then(d2 => _showSynopsis(d2))
+            .catch(() => {});
         }
       })
       .catch(() => {});
   };
 
   if (book.isbn) {
-    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&langRestrict=it`)
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&maxResults=1`)
       .then(r => r.json())
-      .then(data => {
-        const item = data.items?.[0];
-        const desc = item?.volumeInfo?.description;
-        if (desc) {
-          synEl.textContent = desc.length > 400 ? desc.substring(0, 397) + '…' : desc;
-          synEl.style.display = 'block';
-        } else {
-          fetchSynopsisByTitleAuthor();
-        }
-      })
+      .then(data => { if (!_showSynopsis(data)) fetchSynopsisByTitleAuthor(); })
       .catch(() => { fetchSynopsisByTitleAuthor(); });
   } else {
     fetchSynopsisByTitleAuthor();
   }
 
   try {
-    const { averageRating, count } = await api('GET', `/books/${bookId}/reviews`);
+    const { averageRating, count, reviews } = await api('GET', `/books/${bookId}/reviews`);
     if (!count) {
-      ratingEl.textContent = 'Nessuna recensione ancora.';
+      ratingEl.innerHTML = '<span style="color:var(--brown-light);font-size:.82rem">Nessuna recensione ancora</span>';
     } else {
-      const stars = '⭐'.repeat(Math.round(averageRating)) + '☆'.repeat(5 - Math.round(averageRating));
-      ratingEl.textContent = `${stars} ${averageRating}/5 (${count} recensione${count === 1 ? '' : 'i'})`;
+      const full  = Math.floor(averageRating);
+      const half  = (averageRating - full) >= 0.5;
+      const empty = 5 - full - (half ? 1 : 0);
+      ratingEl.innerHTML =
+        `<span style="color:#F5A623;font-size:1.05rem;letter-spacing:1px">${'★'.repeat(full)}${half?'½':''}<span style="color:#ddd">${'★'.repeat(empty)}</span></span>` +
+        `<span style="font-weight:700;color:var(--brown);margin-left:5px">${averageRating.toFixed(1)}</span>` +
+        `<span style="color:var(--brown-light);font-size:.82rem"> / 5 · ${count} recension${count===1?'e':'i'}</span>`;
+      // Mostra ultime 3 recensioni con testo
+      if (reviews && reviews.length) {
+        const simEl = document.getElementById('bp-similar');
+        const existing = document.getElementById('bp-reviews-section');
+        if (existing) existing.remove();
+        const sec = document.createElement('div');
+        sec.id = 'bp-reviews-section';
+        sec.style.marginBottom = '1rem';
+        sec.innerHTML = `<div style="font-size:.78rem;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">💬 Recensioni</div>` +
+          reviews.slice(0,3).map(r =>
+            `<div style="background:var(--cream);border-radius:8px;padding:7px 10px;margin-bottom:4px;font-size:.8rem">
+              <span style="color:#F5A623">${'★'.repeat(r.rating)}<span style="color:#ddd">${'★'.repeat(5-r.rating)}</span></span>
+              <span style="color:var(--brown-light);font-size:.72rem;margin-left:4px">${r.studentName}</span>
+              ${r.text ? `<div style="margin-top:3px;color:var(--ink);font-style:italic">"${r.text}"</div>` : ''}
+            </div>`).join('');
+        if (simEl) simEl.parentNode.insertBefore(sec, simEl.nextSibling);
+      }
     }
   } catch (e) {
-    ratingEl.textContent = '';
+    ratingEl.innerHTML = '';
   }
   // Libri simili: prima stesso autore, poi stessa categoria (max 3 totali)
   const simEl  = document.getElementById('bp-similar');
@@ -3960,6 +3998,7 @@ async function addBook() {
       location: l,
       genre: document.getElementById('a-genre').value.trim(),
       isbn: document.getElementById('a-isbn').value.trim(),
+      language: document.getElementById('a-language')?.value || 'it',
       cover_url: acCoverUrl || undefined,
     }, 'admin');
 
@@ -3984,6 +4023,8 @@ async function addBook() {
     ['a-author','a-publisher','a-location','a-genre','a-isbn'].forEach(id => document.getElementById(id).value='');
     titleEl.value = '';
     titleEl.dataset.coverUrl = '';
+    const langSel = document.getElementById('a-language');
+    if (langSel) langSel.value = 'it';
     closeAcDropdown();
     renderBooksTable();
     renderStats();
@@ -6583,12 +6624,23 @@ async function renderBookMap(bookLocation, prefix = 'bp') {
   // Se il codice non contiene lettere (vecchio schema solo numerico), si usa
   // come fallback il primo segmento prima del separatore.
   const upperLoc = bookLocation.trim().toUpperCase();
-  const letterMatch = upperLoc.match(/[A-Z]+/);
-  const locPart = letterMatch ? letterMatch[0] : upperLoc.split(/[\.\-\/\s]/)[0];
-  const target  = shelves.find(s =>
-    s.name.toUpperCase() === locPart ||
-    s.name.toUpperCase() === upperLoc
-  );
+  // Strategia di matching (in ordine di priorità):
+  // 1. Match esatto con la posizione intera (es. "6.L" == "6.L")
+  // 2. Match con solo la parte numerica (es. "6" da "6.L")
+  // 3. Match con solo la parte letterale (es. "L" da "6.L")
+  // 4. Match parziale: la posizione inizia con il nome dello scaffale
+  const numPart    = upperLoc.match(/^\d+/)?.[0] || '';
+  const letterPart = upperLoc.match(/[A-Z]+/)?.[0] || '';
+  const target = shelves.find(s => {
+    const sName = s.name.toUpperCase();
+    return sName === upperLoc ||                          // match esatto
+           (numPart && sName === numPart) ||             // solo numero
+           (letterPart && sName === letterPart) ||       // solo lettera
+           upperLoc.startsWith(sName) ||                 // pos inizia con nome scaffale
+           sName.startsWith(numPart + '.') ||            // scaffale = "6.X"
+           sName === numPart + letterPart ||             // scaffale = "6L"
+           sName === letterPart + numPart;               // scaffale = "L6"
+  });
   if (!target) return;
   gridEl.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
   let html = '';

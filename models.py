@@ -98,15 +98,18 @@ class Book(Base):
     location  = Column(String, nullable=False)
     genre     = Column(String, default="", index=True)
     isbn      = Column(String, nullable=True, index=True)
+    language  = Column(String, nullable=True, default="it")  # codice ISO: it, en, fr, de, es...
     cover_url            = Column(String, nullable=True)
     openlibrary_checked  = Column(Boolean, default=False, nullable=False, server_default='0')
-    book_status          = Column(String, nullable=False, default="disponibile")  # disponibile|in_riparazione|smarrito
+    book_status          = Column(String, nullable=False, default="disponibile")
 
     loans     = relationship("Loan", back_populates="book", cascade="all, delete-orphan")
     waitlist  = relationship("Waitlist", back_populates="book", cascade="all, delete-orphan")
 
     def to_dict(self):
         active_loan = next((l for l in self.loans if not l.returned), None)
+        reviews = [r for r in getattr(self, 'reviews', []) if r.rating]
+        avg = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else None
         return {
             "id":        self.id,
             "title":     self.title,
@@ -115,10 +118,13 @@ class Book(Base):
             "location":  self.location,
             "genre":     self.genre,
             "isbn":      self.isbn,
+            "language":           self.language or "it",
             "coverUrl":           self.cover_url,
             "openlibraryChecked": self.openlibrary_checked,
             "bookStatus":         self.book_status or "disponibile",
-            "available": active_loan is None and (self.book_status or "disponibile") == "disponibile",
+            "available":          active_loan is None and (self.book_status or "disponibile") == "disponibile",
+            "averageRating":      avg,
+            "reviewCount":        len(reviews),
         }
 
 
