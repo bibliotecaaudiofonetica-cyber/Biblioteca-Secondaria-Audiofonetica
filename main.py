@@ -1780,7 +1780,7 @@ def return_book(loan_id: str, db: Session = Depends(get_db),
     first_in_queue = queue[0].user if queue else None
     if first_in_queue:
         _notify_waitlist_available(db, loan.book_id, loan.book_title, first_in_queue)
-    log_access(db, "student", sp["name"], "return_book", detail=loan.book_title)
+    log_access(db, "student", student_payload["name"], "return_book", detail=loan.book_title)
     return {"loan": loan.to_dict(), "nextInQueue": first_in_queue, "gamification": gamification_result}
 
 
