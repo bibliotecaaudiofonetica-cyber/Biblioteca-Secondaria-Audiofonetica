@@ -8,18 +8,21 @@ import os
 import re
 import uuid
 import threading
+import hmac
 import logging
 import httpx
 from dotenv import load_dotenv
 load_dotenv()
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from sqlalchemy import or_, text, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -414,6 +417,25 @@ class BroadcastMessage(BaseModel):
         if not v or not v.strip():
             raise ValueError("Il messaggio non può essere vuoto")
         return v
+
+
+class OverdueNotifyRequest(BaseModel):
+    recipients: str = "both"  # student | teachers | both
+    channels: str = "both"    # in_app | email | both
+
+    @field_validator("recipients")
+    @classmethod
+    def validate_recipients(cls, value):
+        if value not in {"student", "teachers", "both"}:
+            raise ValueError("Destinatari non validi")
+        return value
+
+    @field_validator("channels")
+    @classmethod
+    def validate_channels(cls, value):
+        if value not in {"in_app", "email", "both"}:
+            raise ValueError("Canali non validi")
+        return value
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1097,6 +1119,146 @@ def teacher_send_reminder_all(db: Session = Depends(get_db),
     }
 
 
+def _notify_overdue_loan(
+    loan: "models.Loan",
+    db: Session,
+    recipients: str,
+    channels: str,
+    allowed_class_ids: set[str] | None = None,
+) -> dict:
+    """Invia un sollecito manuale rispettando la relazione alunno-classe-professori."""
+    now = datetime.now(timezone.utc)
+    due_date = loan.due_date
+    if due_date.tzinfo is None:
+        due_date = due_date.replace(tzinfo=timezone.utc)
+    if due_date >= now:
+        raise HTTPException(400, "Il prestito non è ancora in ritardo")
+
+    student = db.query(models.Student).filter_by(full_name=loan.user).first()
+    if not student:
+        raise HTTPException(404, "Alunno non trovato")
+    if not student.class_id:
+        class_name = "Classe non assegnata"
+        class_teachers = []
+    else:
+        school_class = db.query(models.SchoolClass).get(student.class_id)
+        class_name = school_class.name if school_class else "Classe non assegnata"
+        class_teachers = [
+            teacher for teacher in (school_class.teachers if school_class else [])
+            if teacher.active
+        ]
+
+    if allowed_class_ids is not None and student.class_id not in allowed_class_ids:
+        raise HTTPException(403, "Questo alunno non appartiene alle tue classi")
+
+    selected_student = recipients in {"student", "both"}
+    selected_teachers = recipients in {"teachers", "both"}
+    use_in_app = channels in {"in_app", "both"}
+    use_email = channels in {"email", "both"}
+
+    if selected_teachers and not class_teachers:
+        raise HTTPException(400, "Nessun professore attivo associato alla classe dell'alunno")
+
+    local_now = now.astimezone(ZoneInfo("Europe/Rome"))
+    local_due = due_date.astimezone(ZoneInfo("Europe/Rome"))
+    days_late = max(1, (local_now.date() - local_due.date()).days)
+    due_str = due_date.astimezone(ZoneInfo("Europe/Rome")).strftime("%d/%m/%Y")
+    day_label = "giorno" if days_late == 1 else "giorni"
+
+    notifications_created = 0
+    emails_sent = 0
+    email_skipped = 0
+    notified = []
+
+    if selected_student:
+        if use_in_app:
+            create_notification(
+                db, "student", student.full_name, "overdue",
+                f"📕 Promemoria: {loan.book_title}",
+                f"Scadenza {due_str} — in ritardo di {days_late} {day_label}. Riportalo appena possibile.",
+                related_loan_id=loan.id,
+            )
+            notifications_created += 1
+        if use_email:
+            if student.email:
+                if email_service.send_overdue_student(
+                    student_name=student.full_name,
+                    student_email=student.email,
+                    book_title=loan.book_title,
+                    due_date_str=due_str,
+                    days_late=days_late,
+                ):
+                    emails_sent += 1
+            else:
+                email_skipped += 1
+        notified.append({"type": "student", "name": student.full_name, "hasEmail": bool(student.email)})
+
+    if selected_teachers:
+        for teacher in class_teachers:
+            if use_in_app:
+                create_notification(
+                    db, "teacher", teacher.id, "teacher_alert",
+                    f"📕 Ritardo restituzione — {student.full_name} ({class_name})",
+                    f"Libro: {loan.book_title} — Scadenza: {due_str} — Ritardo: {days_late} {day_label}.",
+                    related_loan_id=loan.id,
+                )
+                notifications_created += 1
+            if use_email:
+                if teacher.email:
+                    if email_service.send_overdue_teacher(
+                        teacher_name=teacher.full_name,
+                        teacher_email=teacher.email,
+                        student_name=student.full_name,
+                        class_name=class_name,
+                        book_title=loan.book_title,
+                        due_date_str=due_str,
+                        days_late=days_late,
+                        is_followup=False,
+                    ):
+                        emails_sent += 1
+                else:
+                    email_skipped += 1
+            notified.append({"type": "teacher", "name": teacher.full_name, "hasEmail": bool(teacher.email)})
+
+    return {
+        "loanId": loan.id,
+        "notificationsCreated": notifications_created,
+        "emailsSent": emails_sent,
+        "emailsSkippedNoAddress": email_skipped,
+        "recipients": notified,
+    }
+
+
+@app.post("/admin/loans/{loan_id}/notify-overdue", tags=["Prestiti"],
+          dependencies=[Depends(auth.require_admin)])
+def admin_notify_overdue_loan(
+    loan_id: str, body: OverdueNotifyRequest, db: Session = Depends(get_db)
+):
+    loan = db.query(models.Loan).get(loan_id)
+    if not loan or loan.returned:
+        raise HTTPException(404, "Prestito non trovato o già restituito")
+    result = _notify_overdue_loan(loan, db, body.recipients, body.channels)
+    return {"ok": True, "result": result}
+
+
+@app.post("/teacher/loans/{loan_id}/notify-overdue", tags=["Portale Professori"])
+def teacher_notify_overdue_loan(
+    loan_id: str, body: OverdueNotifyRequest, db: Session = Depends(get_db),
+    teacher_payload: dict = Depends(auth.require_teacher),
+):
+    loan = db.query(models.Loan).get(loan_id)
+    if not loan or loan.returned:
+        raise HTTPException(404, "Prestito non trovato o già restituito")
+    teacher = db.query(models.Teacher).get(teacher_payload["teacher_id"])
+    if not teacher or not teacher.active:
+        raise HTTPException(404, "Professore non trovato o non attivo")
+    class_ids = {school_class.id for school_class in teacher.classes}
+    result = _notify_overdue_loan(
+        loan, db, body.recipients, body.channels, allowed_class_ids=class_ids
+    )
+    return {"ok": True, "result": result}
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # BOOKS
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1776,48 +1938,79 @@ def return_book(loan_id: str, db: Session = Depends(get_db),
     gamification_result = _apply_gamification_on_return(db, loan)
     _notify_return_confirm(db, loan, gamification_result)
 
-    queue = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(models.Waitlist.date).all()
-    first_in_queue = queue[0].user if queue else None
-    if first_in_queue:
-        _notify_waitlist_available(db, loan.book_id, loan.book_title, first_in_queue)
+    queue = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(
+        models.Waitlist.date.asc(), models.Waitlist.id.asc()
+    ).all()
+    notified_student = _notify_waitlist_available(db, loan.book_id, loan.book_title) if queue else None
+    next_entry = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(
+        models.Waitlist.date.asc(), models.Waitlist.id.asc()
+    ).first()
+    next_in_queue = next_entry.user if next_entry else None
     log_access(db, "student", student_payload["name"], "return_book", detail=loan.book_title)
-    return {"loan": loan.to_dict(), "nextInQueue": first_in_queue, "gamification": gamification_result}
+    return {
+        "loan": loan.to_dict(),
+        "nextInQueue": next_in_queue,
+        "waitlistNotified": notified_student,
+        "gamification": gamification_result,
+    }
 
 
-def _notify_waitlist_available(db: Session, book_id: str, book_title: str, student_name: str):
-    """Invia notifica interna + email (se disponibile) al primo studente in lista d'attesa."""
-    # Notifica interna
-    notif = models.Notification(
-        recipient_type="student",
-        recipient_id=student_name,
-        kind="waitlist_available",
-        title=f"📗 Disponibile: {book_title}",
-        body="Il libro che aspettavi è tornato in biblioteca! Affrettati prima che lo prenda qualcun altro.",
-    )
-    db.add(notif)
-    db.commit()
-    # Email
-    student = db.query(models.Student).filter_by(full_name=student_name).first()
-    if student and student.email:
-        html = email_service._base_template(
-            "Libro disponibile!", "📗", "#2E6B45",
-            f"""<p style="font-size:16px;color:#1A1208;margin:0 0 14px;">
-                  Ciao <strong>{student_name}</strong>! 👋
-                </p>
-                <p style="font-size:15px;color:#1A1208;margin:0 0 18px;">
-                  Il libro che stavi aspettando è tornato disponibile:
-                </p>
-                {email_service._info_table(("📖 Libro", book_title))}
-                <p style="font-size:14px;color:#8B6550;margin:0;">
-                  Accedi alla biblioteca e prendilo subito prima che finisca! 🏃
-                </p>"""
-        )
-        email_service.send_email(
-            to_email=student.email,
-            to_name=student_name,
-            subject=f"📗 Disponibile: {book_title}",
-            html_body=html,
-        )
+def _notify_waitlist_available(db: Session, book_id: str, book_title: str):
+    """Avvisa il solo primo iscritto valido e consuma il suo turno FIFO."""
+    while True:
+        entry = db.query(models.Waitlist).filter_by(book_id=book_id).order_by(
+            models.Waitlist.date.asc(), models.Waitlist.id.asc()
+        ).first()
+        if not entry:
+            return None
+
+        student_name = entry.user
+        student = db.query(models.Student).filter_by(full_name=student_name).first()
+        if not student:
+            # Elimina iscrizioni orfane (alunni non più presenti in anagrafica)
+            # e passa al prossimo senza consumare un avviso destinato a un alunno valido.
+            db.delete(entry)
+            db.commit()
+            continue
+
+        # La riga viene rimossa nella stessa transazione della notifica interna:
+        # il medesimo iscritto non può essere avvisato di nuovo alle restituzioni successive.
+        db.add(models.Notification(
+            recipient_type="student",
+            recipient_id=student_name,
+            kind="waitlist_available",
+            title=f"📗 Disponibile: {book_title}",
+            body="Il libro che aspettavi è tornato in biblioteca! Affrettati prima che lo prenda qualcun altro.",
+        ))
+        db.delete(entry)
+        db.commit()
+
+        # L'email è un canale aggiuntivo: un suo errore non deve ripetere la notifica
+        # interna né bloccare il passaggio al prossimo iscritto della lista.
+        if student.email:
+            try:
+                html = email_service._base_template(
+                    "Libro disponibile!", "📗", "#2E6B45",
+                    f"""<p style="font-size:16px;color:#1A1208;margin:0 0 14px;">
+                          Ciao <strong>{student_name}</strong>! 👋
+                        </p>
+                        <p style="font-size:15px;color:#1A1208;margin:0 0 18px;">
+                          Il libro che stavi aspettando è tornato disponibile:
+                        </p>
+                        {email_service._info_table(("📖 Libro", book_title))}
+                        <p style="font-size:14px;color:#8B6550;margin:0;">
+                          Accedi alla biblioteca e prendilo subito prima che finisca! 🏃
+                        </p>"""
+                )
+                email_service.send_email(
+                    to_email=student.email,
+                    to_name=student_name,
+                    subject=f"📗 Disponibile: {book_title}",
+                    html_body=html,
+                )
+            except Exception:
+                logger.exception("Errore email disponibilità libro per %s", student_name)
+        return student_name
 
 
 @app.patch("/loans/{loan_id}/return-admin", tags=["Prestiti"], dependencies=[Depends(auth.require_admin)])
@@ -1840,11 +2033,18 @@ def return_book_admin(loan_id: str, db: Session = Depends(get_db)):
     gamification_result = _apply_gamification_on_return(db, loan)
     _notify_return_confirm(db, loan, gamification_result)
 
-    queue = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(models.Waitlist.date).all()
-    first_in_queue = queue[0].user if queue else None
-    if first_in_queue:
-        _notify_waitlist_available(db, loan.book_id, loan.book_title, first_in_queue)
-    return {"loan": loan.to_dict(), "nextInQueue": first_in_queue}
+    queue = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(
+        models.Waitlist.date.asc(), models.Waitlist.id.asc()
+    ).all()
+    notified_student = _notify_waitlist_available(db, loan.book_id, loan.book_title) if queue else None
+    next_entry = db.query(models.Waitlist).filter_by(book_id=loan.book_id).order_by(
+        models.Waitlist.date.asc(), models.Waitlist.id.asc()
+    ).first()
+    return {
+        "loan": loan.to_dict(),
+        "nextInQueue": next_entry.user if next_entry else None,
+        "waitlistNotified": notified_student,
+    }
 
 
 @app.patch("/loans/{loan_id}/extend", tags=["Prestiti"], dependencies=[Depends(auth.require_admin)])
@@ -1866,7 +2066,7 @@ def extend_loan(loan_id: str, body: LoanExtend, db: Session = Depends(get_db)):
 
 @app.get("/waitlist", tags=["Lista d'attesa"])
 def list_waitlist(db: Session = Depends(get_db)):
-    entries = db.query(models.Waitlist).order_by(models.Waitlist.date).all()
+    entries = db.query(models.Waitlist).order_by(models.Waitlist.date.asc(), models.Waitlist.id.asc()).all()
     return [w.to_dict() for w in entries]
 
 
@@ -2618,18 +2818,8 @@ def check_overdue_loans():
                                 db, "teacher", teacher.id, "teacher_alert",
                                 title, body, related_loan_id=loan.id,
                             )
-                            # Email al professore (se ha un'email)
-                            if teacher.email:
-                                email_service.send_overdue_teacher(
-                                    teacher_name=teacher.full_name,
-                                    teacher_email=teacher.email,
-                                    student_name=student.full_name,
-                                    class_name=school_class.name,
-                                    book_title=loan.book_title,
-                                    due_date_str=due_str,
-                                    days_late=days_late,
-                                    is_followup=is_followup,
-                                )
+                            # Le notifiche automatiche individuali restano nel portale.
+                            # Le email ai professori sono accorpate nel digest settimanale.
                             any_created = True
                         if any_created:
                             loan.last_teacher_alert_at = now
@@ -2641,6 +2831,151 @@ def check_overdue_loans():
         db.rollback()
     finally:
         db.close()
+
+
+def send_weekly_overdue_digest():
+    """
+    Invia un digest per professore, limitato alle classi a lui assegnate.
+    La tabella weekly_digest_logs rende l'operazione idempotente per settimana.
+    """
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        utc_now = datetime.now(timezone.utc)
+        local_now = utc_now.astimezone(ZoneInfo("Europe/Rome"))
+        week_start = local_now.date() - timedelta(days=local_now.weekday())
+        week_label = local_now.strftime("%d/%m/%Y")
+
+        overdue_loans = db.query(models.Loan).filter(
+            models.Loan.returned == False,
+            models.Loan.due_date < utc_now,
+        ).order_by(models.Loan.due_date.asc()).all()
+
+        teacher_items: dict[str, list[dict]] = {}
+        teachers_by_id: dict[str, models.Teacher] = {}
+
+        for loan in overdue_loans:
+            student = db.query(models.Student).filter_by(full_name=loan.user).first()
+            if not student or not student.class_id:
+                continue
+            school_class = db.query(models.SchoolClass).get(student.class_id)
+            if not school_class:
+                continue
+
+            due_date = loan.due_date
+            if due_date.tzinfo is None:
+                due_date = due_date.replace(tzinfo=timezone.utc)
+            local_due = due_date.astimezone(ZoneInfo("Europe/Rome"))
+            days_late = max(1, (local_now.date() - local_due.date()).days)
+            item = {
+                "student_name": student.full_name,
+                "class_name": school_class.name,
+                "book_title": loan.book_title,
+                "due_date_str": local_due.strftime("%d/%m/%Y"),
+                "days_late": days_late,
+            }
+
+            for teacher in school_class.teachers:
+                if not teacher.active or not (teacher.email or "").strip():
+                    continue
+                teachers_by_id[teacher.id] = teacher
+                teacher_items.setdefault(teacher.id, []).append(item)
+
+        sent_count = 0
+        skipped_count = 0
+        failed_count = 0
+
+        for teacher_id, items in teacher_items.items():
+            teacher = teachers_by_id[teacher_id]
+            log = db.query(models.WeeklyDigestLog).filter_by(
+                teacher_id=teacher_id, week_start=week_start
+            ).first()
+
+            if log and log.status == "sent":
+                skipped_count += 1
+                continue
+            if log and log.status == "pending":
+                # Un processo potrebbe essersi arrestato dopo aver registrato il
+                # tentativo ma prima di completare l'invio. Un pending recente
+                # resta protetto da invii concorrenti; uno abbandonato può ripartire.
+                attempted_at = log.attempted_at
+                if attempted_at and attempted_at.tzinfo is None:
+                    attempted_at = attempted_at.replace(tzinfo=timezone.utc)
+                if attempted_at and attempted_at > utc_now - timedelta(minutes=15):
+                    skipped_count += 1
+                    continue
+
+            if log is None:
+                log = models.WeeklyDigestLog(
+                    teacher_id=teacher_id,
+                    week_start=week_start,
+                    status="pending",
+                    attempted_at=utc_now,
+                    item_count=len(items),
+                )
+                db.add(log)
+                try:
+                    db.commit()
+                except IntegrityError:
+                    db.rollback()
+                    skipped_count += 1
+                    continue
+            else:
+                # I soli invii falliti possono essere ritentati nella stessa settimana.
+                log.status = "pending"
+                log.attempted_at = utc_now
+                log.item_count = len(items)
+                log.error = None
+                db.commit()
+
+            try:
+                sent = email_service.send_weekly_overdue_digest(
+                    teacher_name=teacher.full_name,
+                    teacher_email=teacher.email,
+                    week_label=week_label,
+                    overdue_items=items,
+                )
+            except Exception as exc:
+                logger.exception("Errore digest settimanale per il professore %s", teacher.full_name)
+                sent = False
+                error_message = str(exc)[:500]
+            else:
+                error_message = None if sent else "Brevo non ha confermato l'invio"
+
+            log.status = "sent" if sent else "failed"
+            log.sent_at = datetime.now(timezone.utc) if sent else None
+            log.error = error_message
+            db.commit()
+
+            if sent:
+                sent_count += 1
+            else:
+                failed_count += 1
+
+        logger.info(
+            "Digest ritardi settimanale: %d inviati, %d già gestiti, %d falliti",
+            sent_count, skipped_count, failed_count,
+        )
+        return {
+            "sent": sent_count,
+            "skipped": skipped_count,
+            "failed": failed_count,
+            "weekStart": week_start.isoformat(),
+        }
+    except Exception as exc:
+        logger.exception("Errore durante il digest settimanale dei ritardi: %s", exc)
+        db.rollback()
+        return {"sent": 0, "skipped": 0, "failed": 1, "error": str(exc)}
+    finally:
+        db.close()
+
+
+def check_weekly_overdue_digest():
+    """Controlla i ritardi il lunedì dalle 08:00 in poi (recupero post-risveglio)."""
+    now_local = datetime.now(ZoneInfo("Europe/Rome"))
+    if now_local.weekday() != 0 or (now_local.hour, now_local.minute) < (8, 0):
+        return {"sent": 0, "skipped": 0, "failed": 0, "reason": "fuori_finestra"}
+    return send_weekly_overdue_digest()
 
 
 def check_inactivity_penalties():
@@ -2719,10 +3054,17 @@ def _start_scheduler():
         # Ogni giorno alle 8:00 (orario scolastico, prima delle lezioni)
         scheduler.add_job(check_due_soon_reminders, "cron", hour=7, minute=50)
         scheduler.add_job(check_overdue_loans, "cron", hour=8, minute=0)
+        # Primo invio lunedì alle 08:00; controlli orari fino alle 23:00
+        # per ritentare eventuali errori Brevo senza duplicare i digest già inviati.
+        scheduler.add_job(
+            check_weekly_overdue_digest, "cron",
+            day_of_week="mon", hour="8-23", minute=0,
+            id="weekly_overdue_digest", coalesce=True, max_instances=1,
+        )
         scheduler.add_job(check_inactivity_penalties, "cron", hour=8, minute=10)
         scheduler.add_job(check_expired_recommendations, "cron", hour=8, minute=20)
         scheduler.start()
-        logger.info("Scheduler avviato: controllo ritardi ogni giorno alle 08:00")
+        logger.info("Scheduler avviato: ritardi giornalieri alle 08:00; digest professori lunedì alle 08:00")
     except Exception as exc:
         logger.error("Impossibile avviare lo scheduler: %s", exc)
 
@@ -2746,6 +3088,30 @@ def trigger_overdue_check_now():
     """
     check_overdue_loans()
     return {"ok": True, "message": "Controllo ritardi eseguito"}
+
+
+
+@app.post("/admin/weekly-overdue-digest-now", tags=["Setup"],
+          dependencies=[Depends(auth.require_admin)])
+def trigger_weekly_overdue_digest_now():
+    """Esegue manualmente il digest per test o recupero; rispetta il blocco anti-duplicati."""
+    return {"ok": True, "result": send_weekly_overdue_digest()}
+
+
+
+@app.post("/internal/weekly-overdue-digest", tags=["Scheduler"])
+def external_weekly_overdue_digest(request: Request):
+    """
+    Endpoint per cron esterno (necessario se il servizio web va in sospensione).
+    Richiede DIGEST_CRON_SECRET e header X-Cron-Secret.
+    """
+    expected = os.environ.get("DIGEST_CRON_SECRET", "").strip()
+    supplied = request.headers.get("X-Cron-Secret", "").strip()
+    if not expected:
+        raise HTTPException(503, "Digest cron non configurato")
+    if not supplied or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(401, "Credenziale cron non valida")
+    return {"ok": True, "result": send_weekly_overdue_digest()}
 
 
 @app.post("/admin/check-inactivity-now", tags=["Setup"], dependencies=[Depends(auth.require_admin)])

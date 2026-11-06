@@ -26,7 +26,8 @@ Tempo stimato per completare tutta la guida: 1-2 ore con calma.
 6. [Primo avvio e popolamento dati](#6-primo-avvio-e-popolamento-dati)
 7. [Collegare i PC della scuola](#7-collegare-i-pc-della-scuola)
 8. [Test finale (checklist)](#8-test-finale-checklist)
-9. [Manutenzione e domande frequenti](#9-manutenzione-e-domande-frequenti)
+9. [Digest settimanale dei prestiti in ritardo](#9-digest-settimanale-dei-prestiti-in-ritardo)
+10. [Manutenzione e domande frequenti](#10-manutenzione-e-domande-frequenti)
 
 ---
 
@@ -97,6 +98,7 @@ rischio di "database bloccato".
 - `EMAIL_FROM` = l'indirizzo email che hai verificato al punto 4 (deve
   corrispondere esattamente, altrimenti Brevo rifiuta l'invio)
 - `EMAIL_FROM_NAME` = `Biblioteca Scolastica`
+- `DIGEST_CRON_SECRET` = una chiave casuale lunga, usata dal cron esterno per attivare il digest settimanale
 
 > 💡 Le email arriveranno con questo indirizzo come mittente reale. Se in
 > futuro avrai un dominio tuo, potrai autenticarlo su Brevo (Settings →
@@ -332,7 +334,58 @@ curl -X POST https://TUO-BACKEND.onrender.com/admin/check-overdue-now \
 
 ---
 
-## 9. Manutenzione e domande frequenti
+## 9. Digest settimanale dei prestiti in ritardo
+
+Il sistema prepara un riepilogo email per ciascun professore **ogni lunedì alle
+08:00 (Europe/Rome)**. Ogni digest contiene soltanto i prestiti scaduti e non
+restituiti degli alunni appartenenti alle classi assegnate a quel professore.
+Se non ci sono ritardi, oppure il professore non ha un indirizzo email, non
+viene inviata alcuna email.
+
+Gli avvisi automatici individuali ai professori restano visibili nel portale;
+le email automatiche ai professori sono accorpate nel digest settimanale.
+I promemoria email agli alunni mantengono il comportamento già esistente.
+
+### Attivazione affidabile su Render
+
+Il servizio Render gratuito può andare in sospensione: in quel periodo lo
+scheduler interno al processo non può eseguire il digest. Per garantire
+l'attivazione del lunedì alle 08:00:
+
+1. Genera una chiave segreta:
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(48))"
+   ```
+2. Imposta il risultato come variabile d'ambiente `DIGEST_CRON_SECRET` su Render.
+3. Configura un servizio di cron esterno con fuso orario **Europe/Rome**:
+   - frequenza: ogni lunedì alle 08:00;
+   - metodo: `POST`;
+   - URL: `https://TUO-BACKEND.onrender.com/internal/weekly-overdue-digest`;
+   - header: `X-Cron-Secret: VALORE_DI_DIGEST_CRON_SECRET`.
+4. Non inserire la chiave nell'URL o nel frontend. Conservala soltanto nella
+   configurazione segreta del servizio cron e nelle variabili d'ambiente Render.
+
+L'endpoint rifiuta le richieste senza la chiave corretta. Il registro persistente
+nel database impedisce di inviare due volte il digest allo stesso professore
+nella stessa settimana. Lo scheduler interno rimane attivo come meccanismo
+integrativo quando il backend è acceso.
+
+Per una prova manuale autenticata come amministratore è disponibile:
+`POST /admin/weekly-overdue-digest-now`. Anche questa prova rispetta il blocco
+anti-duplicati settimanale.
+
+### Lista d'attesa FIFO
+
+Quando un libro viene restituito, il sistema avvisa **soltanto il primo alunno**
+secondo la data di iscrizione (con identificativo come spareggio in caso di
+stessa data), tramite notifica nel portale e, se disponibile, email. Il turno
+notificato viene tolto dalla coda: il successivo riceverà l'avviso alla
+successiva restituzione dello stesso libro. In questo modo il primo iscritto
+non resta bloccato in testa e non riceve notifiche duplicate a ogni rientro.
+
+---
+
+## 10. Manutenzione e domande frequenti
 
 **Come cambio la password admin più avanti?**
 Rilancia `python setup_admin.py` in locale, copia il nuovo

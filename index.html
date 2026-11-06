@@ -1188,8 +1188,8 @@
       </div>
       <p style="font-size:.82rem;color:var(--brown-light);line-height:1.5;margin:0 0 .6rem">
         Tieni premuto Ctrl (o Cmd su Mac) per selezionare più classi. Il professore accede al portale
-        con nome+cognome e una password che sceglierà lui stesso al primo accesso. Le notifiche di
-        ritardo compaiono nel suo portale, non vengono inviate per email.
+        con nome+cognome e una password che sceglierà lui stesso al primo accesso. Gli avvisi
+        immediati compaiono nel portale; il riepilogo dei ritardi viene inviato via email ogni lunedì.
       </p>
       <div class="students-table">
         <table>
@@ -1527,6 +1527,40 @@
     <div id="student-notifications-list"></div>
     <div class="modal-buttons" style="margin-top:1rem">
       <button class="btn-cancel" onclick="closeModal('modal-student-notifications')">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: sollecito prestito in ritardo -->
+<div class="modal-overlay" id="modal-overdue-notify">
+  <div class="modal modal-profile-large" style="max-width:520px">
+    <h3>📧 Invia un sollecito</h3>
+    <p id="overdue-notify-context" style="font-size:.88rem;color:var(--brown-light);line-height:1.5">
+      Scegli chi avvisare e attraverso quali canali.
+    </p>
+    <div style="margin:1rem 0">
+      <div style="font-weight:700;color:var(--brown);margin-bottom:.55rem">Destinatari</div>
+      <div style="display:grid;gap:.55rem">
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-recipient" value="student"> Alunno</label>
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-recipient" value="teachers"> Professori della sua classe</label>
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-recipient" value="both" checked> Alunno e professori della sua classe</label>
+      </div>
+    </div>
+    <div style="margin:1rem 0">
+      <div style="font-weight:700;color:var(--brown);margin-bottom:.55rem">Canali di invio</div>
+      <div style="display:grid;gap:.55rem">
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-channel" value="in_app"> Solo notifica nell'app</label>
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-channel" value="email"> Solo email</label>
+        <label style="display:flex;align-items:center;gap:.55rem"><input type="radio" name="overdue-notify-channel" value="both" checked> Notifica nell'app ed email</label>
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--brown-light);margin:.75rem 0">
+      I professori destinatari vengono individuati automaticamente in base alla classe dell'alunno.
+      Le email sono inviate solo agli utenti con un indirizzo registrato.
+    </p>
+    <div class="modal-buttons" style="margin-top:1rem">
+      <button class="btn-cancel" onclick="closeModal('modal-overdue-notify')">Annulla</button>
+      <button class="btn-confirm" id="btn-send-overdue-notify" onclick="submitOverdueNotification()">📨 Invia</button>
     </div>
   </div>
 </div>
@@ -2523,6 +2557,55 @@ async function confirmPasswordReset() {
   } catch(e) { showToast('❌ ' + e.message); }
   finally { hideLoading(); }
 }
+let _overdueNotifyLoanId = null;
+let _overdueNotifyMode = "admin";
+
+function openOverdueNotifyModal(loanId, mode) {
+  _overdueNotifyLoanId = loanId;
+  _overdueNotifyMode = mode || "admin";
+  const context = document.getElementById("overdue-notify-context");
+  context.textContent = _overdueNotifyMode === "teacher"
+    ? "Il sollecito può riguardare l'alunno e/o i professori associati alla classe. Puoi intervenire solo sulle tue classi."
+    : "Il sollecito può essere inviato all'alunno e/o ai professori associati alla sua classe.";
+  document.querySelector('input[name="overdue-notify-recipient"][value="both"]').checked = true;
+  document.querySelector('input[name="overdue-notify-channel"][value="both"]').checked = true;
+  openModal("modal-overdue-notify");
+}
+
+async function submitOverdueNotification() {
+  if (!_overdueNotifyLoanId) return;
+  const recipients = document.querySelector('input[name="overdue-notify-recipient"]:checked')?.value;
+  const channels = document.querySelector('input[name="overdue-notify-channel"]:checked')?.value;
+  if (!recipients || !channels) {
+    showToast("Seleziona destinatari e canali.");
+    return;
+  }
+  const button = document.getElementById("btn-send-overdue-notify");
+  button.disabled = true;
+  showLoading("Invio del sollecito…");
+  try {
+    const endpoint = _overdueNotifyMode === "teacher"
+      ? `/teacher/loans/${_overdueNotifyLoanId}/notify-overdue`
+      : `/admin/loans/${_overdueNotifyLoanId}/notify-overdue`;
+    const role = _overdueNotifyMode === "teacher" ? "teacher" : "admin";
+    const response = await api("POST", endpoint, { recipients, channels }, role);
+    const result = response.result || {};
+    const recipientNames = (result.recipients || []).map(r => r.name);
+    const parts = [];
+    if (result.notificationsCreated) parts.push(`${result.notificationsCreated} notifiche in app`);
+    if (result.emailsSent) parts.push(`${result.emailsSent} email`);
+    if (result.emailsSkippedNoAddress) parts.push(`${result.emailsSkippedNoAddress} destinatari senza email`);
+    const summary = parts.length ? parts.join(" · ") : "nessun invio effettuato";
+    closeModal("modal-overdue-notify");
+    showToast(`✅ Sollecito elaborato: ${summary}${recipientNames.length ? " · " + recipientNames.join(", ") : ""}`);
+  } catch (e) {
+    showToast("❌ " + e.message);
+  } finally {
+    button.disabled = false;
+    hideLoading();
+  }
+}
+
 async function adminSendReminder(loanId) {
   showLoading('Invio promemoria…');
   try {
@@ -4086,7 +4169,7 @@ function renderLoans() {
         <div class="loan-row-actions">
           <button class="btn-loan-action btn-force-return" onclick="forceReturn('${l.id}')">✓ Segna restituito</button>
           <button class="btn-loan-action btn-extend"       onclick="openExtend('${l.id}')">📅 Estendi</button>
-          ${ov ? `<button class="btn-loan-action" style="background:#FFF3DC;color:#8a6d1f;border:1px solid var(--gold)" onclick="adminSendReminder('${l.id}')" title="Invia promemoria notifica + email">📧 Promemoria</button>` : ''}
+          ${ov ? `<button class="btn-loan-action" style="background:#FFF3DC;color:#8a6d1f;border:1px solid var(--gold)" onclick="openOverdueNotifyModal('${l.id}', 'admin')" title="Scegli destinatari e canali del sollecito">📧 Promemoria</button>` : ''}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
@@ -5439,7 +5522,7 @@ function renderTeacherOverdueList() {
         <button class="btn-notified ${notified ? '' : 'not-yet'}" onclick="toggleNotified('${o.loanId}', ${!notified})">
           ${notified ? '✓ Avvisato' : 'Segna avvisato'}
         </button>
-        <button class="btn-notified not-yet" onclick="teacherSendReminder('${o.loanId}')" title="Invia promemoria via notifica + email">
+        <button class="btn-notified not-yet" onclick="openOverdueNotifyModal('${o.loanId}', 'teacher')" title="Scegli destinatari e canali del sollecito">
           📧
         </button>
       </div>

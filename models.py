@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text, Integer, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, Date, ForeignKey, Text, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
@@ -45,7 +45,7 @@ class Teacher(Base):
     """
     Professore/referente di una o più classi. Accede al portale notifiche
     con nome+cognome (identificativo univoco) + password scelta al primo
-    accesso. Nessuna email: stesso principio degli alunni.
+    accesso. L'indirizzo email è facoltativo e viene usato per le comunicazioni.
     """
     __tablename__ = "teachers"
 
@@ -247,6 +247,25 @@ class Setting(Base):
 # ══════════════════════════════════════════════════════════════════════════════
 # NOTIFICHE INTERNE (sostituiscono l'invio email)
 # ══════════════════════════════════════════════════════════════════════════════
+
+class WeeklyDigestLog(Base):
+    """Registro persistente degli invii digest per evitare duplicazioni settimanali."""
+    __tablename__ = "weekly_digest_logs"
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "week_start", name="uq_weekly_digest_teacher_week"),
+    )
+
+    id           = Column(String, primary_key=True, default=new_id)
+    teacher_id   = Column(String, ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    week_start   = Column(Date, nullable=False)
+    status       = Column(String, nullable=False, default="pending", index=True)  # pending | sent | failed
+    attempted_at = Column(DateTime(timezone=True), default=now_utc, nullable=False)
+    sent_at      = Column(DateTime(timezone=True), nullable=True)
+    item_count   = Column(Integer, nullable=False, default=0)
+    error        = Column(Text, nullable=True)
+
+    teacher = relationship("Teacher")
+
 
 class Notification(Base):
     """

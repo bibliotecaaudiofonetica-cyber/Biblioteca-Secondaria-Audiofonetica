@@ -14,6 +14,7 @@ a funzionare con le sole notifiche interne.
 import os
 import logging
 import httpx
+from html import escape
 
 logger = logging.getLogger("biblioteca.email")
 
@@ -307,6 +308,73 @@ def send_overdue_teacher(teacher_name: str, teacher_email: str,
         to_name=teacher_name,
         subject=f"{prefix}: {student_name} — {book_title} ({days_late} {giorni})",
         html_body=html,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DIGEST SETTIMANALE DEI PRESTITI IN RITARDO (per professore)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_weekly_overdue_digest_html(
+    teacher_name: str,
+    week_label: str,
+    overdue_items: list[dict],
+) -> str:
+    """Costruisce il digest usando lo stesso wrapper grafico delle altre email."""
+    rows = []
+    for item in overdue_items:
+        student = escape(str(item.get("student_name") or "Alunno"))
+        class_name = escape(str(item.get("class_name") or "Classe non indicata"))
+        book_title = escape(str(item.get("book_title") or "Libro non indicato"))
+        due_date = escape(str(item.get("due_date_str") or "—"))
+        days_late = max(0, int(item.get("days_late") or 0))
+        days_label = "giorno" if days_late == 1 else "giorni"
+        rows.append(f"""
+          <div style="border:1px solid #EDE5D4;border-radius:10px;padding:14px;margin:0 0 12px;">
+            <div style="font-size:12px;color:#8B6550;font-weight:700;text-transform:uppercase;
+                        letter-spacing:.4px;margin-bottom:6px;">{class_name}</div>
+            <div style="font-size:15px;color:#1A1208;font-weight:700;margin-bottom:4px;">{student}</div>
+            <div style="font-size:14px;color:#1A1208;margin-bottom:9px;">📖 {book_title}</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="font-size:12px;color:#8B6550;padding:3px 0;">Scadenza: {due_date}</td>
+                <td style="font-size:12px;color:#A63228;font-weight:700;text-align:right;padding:3px 0;">
+                  {days_late} {days_label} di ritardo
+                </td>
+              </tr>
+            </table>
+          </div>""")
+    count = len(overdue_items)
+    count_label = "prestito scaduto" if count == 1 else "prestiti scaduti"
+    body = f"""
+      <p style="font-size:16px;color:#1A1208;margin:0 0 12px;">
+        Gentile <strong>{escape(str(teacher_name))}</strong>,
+      </p>
+      <p style="font-size:14px;color:#8B6550;margin:0 0 18px;">
+        riepilogo settimanale aggiornato al {escape(str(week_label))}.
+        Nelle classi a Lei assegnate risultano <strong>{count} {count_label}</strong>
+        ancora da restituire.
+      </p>
+      {''.join(rows)}
+      <p style="font-size:13px;color:#8B6550;margin:18px 0 0;">
+        Il riepilogo comprende esclusivamente gli alunni delle classi associate al Suo profilo.
+      </p>"""
+    return _base_template("Riepilogo ritardi", "📚", "#A63228", body)
+
+
+def send_weekly_overdue_digest(
+    teacher_name: str,
+    teacher_email: str,
+    week_label: str,
+    overdue_items: list[dict],
+) -> bool:
+    html_body = build_weekly_overdue_digest_html(teacher_name, week_label, overdue_items)
+    count = len(overdue_items)
+    return send_email(
+        to_email=teacher_email,
+        to_name=teacher_name,
+        subject=f"📚 Riepilogo settimanale prestiti in ritardo ({count})",
+        html_body=html_body,
     )
 
 
