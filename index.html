@@ -223,19 +223,32 @@
   .toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px)}
   /* Tabelle amministrative: mantengono tutte le colonne accessibili senza tagliarle. */
   .students-table,.books-table{background:white;border-radius:14px;overflow-x:auto;overflow-y:hidden;max-width:100%;min-width:0;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--brown-light) var(--warm)}
-  .students-table table{width:max-content;min-width:100%;border-collapse:collapse}
+  /* La tabella studenti usa una griglia a larghezza controllata: con "Tutte le classi"
+     un singolo valore lungo non deve allargare le colonne e spingere Azioni fuori vista. */
+  .students-table table{width:100%;min-width:1250px;table-layout:fixed;border-collapse:collapse}
+  .students-table th:nth-child(1),.students-table td:nth-child(1){width:44px}
+  .students-table th:nth-child(2),.students-table td:nth-child(2){width:165px}
+  .students-table th:nth-child(3),.students-table td:nth-child(3){width:85px}
+  .students-table th:nth-child(4),.students-table td:nth-child(4){width:95px}
+  .students-table th:nth-child(5),.students-table td:nth-child(5){width:175px}
+  .students-table th:nth-child(6),.students-table td:nth-child(6){width:145px}
+  .students-table th:nth-child(7),.students-table td:nth-child(7){width:175px}
+  .students-table th:nth-child(8),.students-table td:nth-child(8){width:100px}
+  .students-table th:nth-child(9),.students-table td:nth-child(9){width:266px}
   .students-table th{background:var(--brown);color:var(--gold-light);padding:12px 16px;text-align:left;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px}
   .students-table td{padding:10px 16px;border-bottom:1px solid var(--warm);font-size:.88rem;vertical-align:middle}
   .students-table tr:last-child td{border-bottom:none}
   .students-table,.books-table,.import-table-wrap{min-width:0;width:100%;}
   .students-table tr:hover td{background:var(--cream)}
   .students-table th,.students-table td,.books-table th,.books-table td{max-width:360px;overflow-wrap:anywhere;vertical-align:middle}
-  .students-table td:last-child,.books-table td:last-child{white-space:nowrap}
+  .students-table td:last-child{white-space:normal}
+  .books-table td:last-child{white-space:nowrap}
   .students-table td:last-child button,.books-table td:last-child button{white-space:nowrap;flex-shrink:0}
   .badge-active{color:var(--green);font-weight:700;font-size:.8rem}
   .badge-inactive{color:#aaa;font-weight:700;font-size:.8rem}
   .pin-display{font-family:monospace;font-size:1rem;font-weight:700;letter-spacing:3px;color:var(--brown);background:var(--cream);padding:2px 8px;border-radius:6px}
-  .student-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+  .student-actions{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;min-width:0}
+  .student-actions .btn-sm{white-space:nowrap;flex:0 0 auto}
   .students-toolbar{display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem;flex-wrap:wrap}
   .students-toolbar .sel-count{font-size:.85rem;color:var(--brown-light)}
   .btn-print-sel{background:var(--brown);color:var(--gold-light);border:none;border-radius:8px;padding:9px 18px;font-family:'Poppins',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;transition:background .2s;display:none}
