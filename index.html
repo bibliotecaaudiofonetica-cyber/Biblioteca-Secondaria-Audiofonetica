@@ -3155,6 +3155,10 @@ async function openBookPreview(bookId) {
   if (!book) return;
   _bpBookId = bookId;
 
+  // Pulisce subito le recensioni del libro precedente: la scheda è riutilizzata.
+  const previousReviewsSection = document.getElementById('bp-reviews-section');
+  if (previousReviewsSection) previousReviewsSection.remove();
+
   const taken = _takenBookIds.includes(bookId);
 
   document.getElementById('bp-title').textContent = book.title;
@@ -3220,6 +3224,9 @@ async function openBookPreview(bookId) {
 
   try {
     const { averageRating, count, reviews } = await api('GET', `/books/${bookId}/reviews`);
+    // Evita che una risposta lenta di un libro cliccato prima sovrascriva
+    // le recensioni del libro aperto successivamente.
+    if (_bpBookId !== bookId) return;
     if (!count) {
       ratingEl.innerHTML = '<span style="color:var(--brown-light);font-size:.82rem">Nessuna recensione ancora</span>';
     } else {
@@ -3249,7 +3256,7 @@ async function openBookPreview(bookId) {
       }
     }
   } catch (e) {
-    ratingEl.innerHTML = '';
+    if (_bpBookId === bookId) ratingEl.innerHTML = '';
   }
   // Libri simili: prima stesso autore, poi stessa categoria (max 3 totali)
   const simEl  = document.getElementById('bp-similar');
